@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Ingresar — Finanzas Hogar{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6 mt-8">
+    <h1 class="text-2xl font-bold text-center mb-6">Ingresar</h1>
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {% if form.errors %}
+            <div class="bg-red-100 text-red-700 p-3 rounded border border-red-400 text-sm">
+                Usuario o contraseña incorrectos. Intenta de nuevo.
+            </div>
+        {% endif %}
+        {% for field in form %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                {{ field }}
+            </div>
+        {% endfor %}
+        <button type="submit"
+                class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition">
+            Ingresar
+        </button>
+    </form>
+    <div class="text-center space-y-2 mt-4">
+        <p class="text-sm">
+            <a href="{% url 'accounts:password_reset' %}" class="text-blue-600 hover:underline">¿Olvidaste tu contraseña?</a>
+        </p>
+        <p class="text-sm text-gray-600">
+            ¿No tienes cuenta? <a href="{% url 'accounts:registro' %}" class="text-blue-600 hover:underline">Regístrate aquí</a>
+        </p>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('input').forEach(i => i.classList.add('mt-1', 'block', 'w-full', 'px-3', 'py-2', 'border', 'border-gray-300', 'rounded-md', 'shadow-sm', 'focus:outline-none', 'focus:ring-blue-500', 'focus:border-blue-500'));
+</script>
+{% endblock %}

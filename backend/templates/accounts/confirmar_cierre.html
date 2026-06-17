@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Cerrar sesión — Finanzas Hogar{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6 mt-8 text-center">
+    <h1 class="text-2xl font-bold mb-4">Cerrar sesión</h1>
+    <p class="text-gray-600 mb-6">¿Estás seguro de que quieres cerrar tu sesión?</p>
+    <form method="post" class="space-y-3">
+        {% csrf_token %}
+        <button type="submit"
+                class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition">
+            Sí, cerrar sesión
+        </button>
+        <a href="{% url 'dashboard' %}"
+           class="block w-full bg-gray-300 text-gray-700 py-2 px-4 rounded-md text-center hover:bg-gray-400 transition">
+            Cancelar
+        </a>
+    </form>
+</div>
+{% endblock %}

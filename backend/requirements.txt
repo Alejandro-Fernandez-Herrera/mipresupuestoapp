@@ -1,0 +1,7 @@
+Django>=5.0,<5.1
+psycopg2-binary>=2.9.9
+python-dotenv>=1.0.0
+django-session-timeout>=0.1.0
+WeasyPrint>=60.0
+openpyxl>=3.1.2
+# Alpine.js se carga vía CDN, no es paquete Python

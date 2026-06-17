@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ titulo }} — Finanzas Hogar{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">{{ titulo }}</h1>
+
+    <div x-data="creditoForm()" class="bg-white rounded-lg shadow p-6">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            {% for field in form %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700">
+                    {{ field.label }}
+                    {% if field.name == 'tasa_ea' %}
+                    <span class="text-xs text-gray-400">(ej: 0.25 = 25% EA)</span>
+                    {% endif %}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="border-t pt-4 mt-4">
+                <h3 class="font-semibold mb-2">Vista previa del cálculo</h3>
+                <div class="space-y-2 text-sm" x-show="preview.show">
+                    <div class="flex justify-between">
+                        <span>Cuota mensual estimada</span>
+                        <span class="font-medium text-blue-600" x-text="preview.cuota"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Tasa mensual</span>
+                        <span x-text="preview.tasaMensual"></span>
+                    </div>
+                    <div class="flex justify-between text-green-600">
+                        <span>Número de cuotas</span>
+                        <span x-text="preview.plazo"></span>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 mt-2" x-show="!preview.show">
+                    Ingresa capital, tasa y plazo para ver la vista previa.
+                </p>
+            </div>
+
+            <div class="flex justify-between pt-4">
+                <a href="{% url 'deudas:lista' %}" class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50">Cancelar</a>
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function creditoForm() {
+    return {
+        preview: { show: false, cuota: '', tasaMensual: '', plazo: '' },
+        init() {
+            const capital = document.querySelector('[name="capital"]');
+            const tasa = document.querySelector('[name="tasa_ea"]');
+            const plazo = document.querySelector('[name="plazo_meses"]');
+            [capital, tasa, plazo].forEach(el => {
+                if (el) el.addEventListener('input', () => this.calcular());
+            });
+        },
+        calcular() {
+            const capital = parseFloat(document.querySelector('[name="capital"]')?.value || 0);
+            const tasa = parseFloat(document.querySelector('[name="tasa_ea"]')?.value || 0);
+            const plazo = parseInt(document.querySelector('[name="plazo_meses"]')?.value || 0);
+            if (capital > 0 && tasa > 0 && plazo > 0) {
+                const tm = Math.pow(1 + tasa, 1/12) - 1;
+                const denominador = 1 - Math.pow(1 + tm, -plazo);
+                const cuota = capital * tm / denominador;
+                this.preview = {
+                    show: true,
+                    cuota: '$' + Math.round(cuota).toLocaleString('es-CO'),
+                    tasaMensual: (tm * 100).toFixed(4) + '% mensual',
+                    plazo: plazo + ' cuotas',
+                };
+            } else {
+                this.preview = { show: false, cuota: '', tasaMensual: '', plazo: '' };
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

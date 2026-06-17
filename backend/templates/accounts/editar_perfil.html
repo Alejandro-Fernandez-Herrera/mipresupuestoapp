@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Editar Perfil — Finanzas Hogar{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6 mt-8">
+    <h1 class="text-2xl font-bold text-center mb-6">Editar Perfil</h1>
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {% for field in form %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <div class="flex space-x-4">
+            <button type="submit"
+                    class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition">
+                Guardar
+            </button>
+            <a href="{% url 'accounts:perfil' %}"
+               class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md text-center hover:bg-gray-400 transition">
+                Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.querySelectorAll('input, select').forEach(input => {
+        input.classList.add('mt-1', 'block', 'w-full', 'px-3', 'py-2', 'border', 'border-gray-300', 'rounded-md', 'shadow-sm', 'focus:outline-none', 'focus:ring-blue-500', 'focus:border-blue-500');
+    });
+</script>
+{% endblock %}

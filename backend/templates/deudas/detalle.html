@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ credito.nombre }} — Finanzas Hogar{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold">{{ credito.nombre }}</h1>
+        <div class="flex space-x-2">
+            <a href="{% url 'deudas:editar' credito.id %}" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 text-sm">Editar</a>
+            <a href="{% url 'deudas:lista' %}" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 text-sm">Volver</a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-sm">Capital</p>
+            <p class="text-2xl font-bold">${{ credito.capital|floatformat:0|intcomma }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-sm">Cuota Mensual</p>
+            <p class="text-2xl font-bold text-blue-600">${{ cuota_mensual|floatformat:0|intcomma }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-sm">Saldo Actual</p>
+            <p class="text-2xl font-bold text-red-600">${{ saldo_actual|floatformat:0|intcomma }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-sm">Interés Total</p>
+            <p class="text-2xl font-bold text-purple-600">${{ interes_total|floatformat:0|intcomma }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-xs">Entidad</p>
+            <p class="font-medium">{{ credito.get_entidad_tipo_display }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-xs">Tasa EA</p>
+            <p class="font-medium">{{ credito.tasa_ea|floatformat:4 }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-xs">Tasa Mensual</p>
+            <p class="font-medium">{{ tasa_mensual|floatformat:4 }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-xs">Desembolso</p>
+            <p class="font-medium">{{ credito.fecha_desembolso|date:"d/m/Y" }}</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex justify-between mb-2">
+            <h2 class="font-semibold">Progreso</h2>
+            <span class="text-sm text-gray-500">{{ cuotas_pagadas }} de {{ credito.plazo_meses }} cuotas</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-4">
+            <div class="bg-blue-600 h-4 rounded-full" style="width: {{ progreso }}%"></div>
+        </div>
+    </div>
+
+    {% if credito.descripcion %}
+    <div class="bg-white rounded-lg shadow p-4">
+        <p class="text-gray-500 text-xs">Descripción</p>
+        <p class="text-sm">{{ credito.descripcion }}</p>
+    </div>
+    {% endif %}
+
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-4 py-3 bg-gray-50 border-b">
+            <h2 class="font-semibold">Tabla de Amortización</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-3 py-2 text-center">#</th>
+                        <th class="px-3 py-2 text-left">Fecha</th>
+                        <th class="px-3 py-2 text-right">Cuota</th>
+                        <th class="px-3 py-2 text-right">Interés</th>
+                        <th class="px-3 py-2 text-right">Capital</th>
+                        <th class="px-3 py-2 text-right">Saldo</th>
+                        <th class="px-3 py-2 text-center">Estado</th>
+                        <th class="px-3 py-2 text-center">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cuota in cuotas %}
+                    <tr class="border-t hover:bg-gray-50 {% if cuota.numero == cuotas_pagadas|add:1 %}bg-blue-50{% endif %}">
+                        <td class="px-3 py-2 text-center font-medium">{{ cuota.numero }}</td>
+                        <td class="px-3 py-2">{{ cuota.fecha_pago|date:"d/m/Y" }}</td>
+                        <td class="px-3 py-2 text-right">${{ cuota.cuota_total|floatformat:0|intcomma }}</td>
+                        <td class="px-3 py-2 text-right text-red-600">${{ cuota.interes|floatformat:0|intcomma }}</td>
+                        <td class="px-3 py-2 text-right text-green-600">${{ cuota.capital_amortizado|floatformat:0|intcomma }}</td>
+                        <td class="px-3 py-2 text-right font-medium">${{ cuota.saldo_capital|floatformat:0|intcomma }}</td>
+                        <td class="px-3 py-2 text-center">
+                            {% if cuota.pagada %}
+                            <span class="text-green-600 text-xs">✓ Pagada</span>
+                            {% else %}
+                            <span class="text-gray-400 text-xs">Pendiente</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-3 py-2 text-center">
+                            {% if not cuota.pagada %}
+                            <form method="post" action="{% url 'deudas:pagar' credito.id %}" class="inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="cuota_id" value="{{ cuota.id }}">
+                                <button type="submit" class="text-green-600 hover:text-green-800 text-xs"
+                                        onclick="return confirm('¿Registrar pago de cuota #{{ cuota.numero }}?')">
+                                    Pagar
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

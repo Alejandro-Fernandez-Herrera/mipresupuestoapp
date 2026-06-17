@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Pagar Tarjeta — {{ tarjeta.nombre }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-2xl font-bold mb-2">Pagar Tarjeta</h1>
+    <p class="text-gray-500 text-sm mb-6">{{ tarjeta.nombre }} — {{ tarjeta.banco }}</p>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="mb-6 grid grid-cols-3 gap-4 text-sm">
+            <div class="bg-gray-50 p-3 rounded">
+                <p class="text-gray-500">Saldo actual</p>
+                <p class="font-bold text-lg text-red-600">${{ tarjeta.saldo_actual|floatformat:0|intcomma }}</p>
+            </div>
+            <div class="bg-gray-50 p-3 rounded">
+                <p class="text-gray-500">Cuota mínima</p>
+                <p class="font-bold text-lg text-yellow-600">${{ cuota_minima|floatformat:0|intcomma }}</p>
+            </div>
+            <div class="bg-gray-50 p-3 rounded">
+                <p class="text-gray-500">Disponible</p>
+                <p class="font-bold text-lg text-green-600">${{ disponible|floatformat:0|intcomma }}</p>
+            </div>
+        </div>
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            {% for field in form %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="flex justify-between pt-4">
+                <a href="{% url 'deudas:detalle_tarjeta' tarjeta.id %}" class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50">Cancelar</a>
+                <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Pagar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Dashboard — Finanzas Hogar{% endblock %}
+
+{% block content %}
+<div x-data="{ mes: {{ mes }}, anio: {{ anio }} }" x-init="$watch('mes', val => window.location.href = '?mes=' + val + '&anio=' + anio); $watch('anio', val => window.location.href = '?mes=' + mes + '&anio=' + val)" class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold">Dashboard</h1>
+        <div class="flex items-center space-x-2">
+            <select x-model="mes" class="border border-gray-300 rounded px-3 py-1 text-sm">
+                <option value="1">Enero</option><option value="2">Febrero</option>
+                <option value="3">Marzo</option><option value="4">Abril</option>
+                <option value="5">Mayo</option><option value="6">Junio</option>
+                <option value="7">Julio</option><option value="8">Agosto</option>
+                <option value="9">Septiembre</option><option value="10">Octubre</option>
+                <option value="11">Noviembre</option><option value="12">Diciembre</option>
+            </select>
+            <input type="number" x-model="anio" class="border border-gray-300 rounded px-3 py-1 text-sm w-20">
+            <button @click="window.location.href = '?mes=' + mes + '&anio=' + anio" class="bg-gray-200 text-gray-600 px-2 py-1 rounded text-sm hover:bg-gray-300" title="Actualizar">↻</button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-sm">Ingresos Netos</p>
+            <p class="text-2xl font-bold text-green-600">${{ total_ingresos|floatformat:0|intcomma }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-sm">Gastos Totales</p>
+            <p class="text-2xl font-bold text-red-600">${{ total_gastos|floatformat:0|intcomma }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-sm">Ahorro Neto</p>
+            <p class="text-2xl font-bold {% if ahorro_neto >= 0 %}text-blue-600{% else %}text-red-600{% endif %}">
+                ${{ ahorro_neto|floatformat:0|intcomma }}
+            </p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-sm">Tasa de Ahorro</p>
+            <p class="text-2xl font-bold text-purple-600">{{ tasa_ahorro|floatformat:1 }}%</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow p-4">
+            <h2 class="font-semibold mb-4">Gastos por Categoría</h2>
+            {% if gastos_por_categoria %}
+            <canvas id="grafico-gastos" height="200"></canvas>
+            {% else %}
+            <p class="text-gray-400 text-sm">Sin gastos este mes</p>
+            {% endif %}
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <h2 class="font-semibold mb-4">Indicadores de Salud Financiera</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span class="text-sm">Tasa Ahorro</span>
+                    <span class="font-medium {% if tasa_ahorro >= meta_tasa %}text-green-600{% elif tasa_ahorro >= 10 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                        {{ tasa_ahorro|floatformat:1 }}% {% if tasa_ahorro >= meta_tasa %}✓{% endif %}
+                    </span>
+                </div>
+                <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span class="text-sm">Presión Gastos Fijos</span>
+                    <span class="font-medium {% if presion_gastos_fijos < 50 %}text-green-600{% elif presion_gastos_fijos < 70 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                        {{ presion_gastos_fijos|floatformat:1 }}%
+                    </span>
+                </div>
+                <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span class="text-sm">Cobertura Emergencia</span>
+                    <span class="font-medium {% if cobertura_emergencia >= 3 %}text-green-600{% elif cobertura_emergencia >= 1 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                        {{ cobertura_emergencia|floatformat:1 }} meses
+                    </span>
+                </div>
+                <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span class="text-sm">Fondo Emergencia</span>
+                    <span class="font-medium">${{ saldo_fondo|floatformat:0|intcomma }}</span>
+                </div>
+            </div>
+            {% if diagnostico %}
+            <div class="mt-3 p-2 bg-blue-50 text-blue-700 text-xs rounded">
+                {{ diagnostico }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4">
+        <h2 class="font-semibold mb-4">Últimos Gastos</h2>
+        {% if ultimos_gastos %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-2 text-left">Fecha</th>
+                        <th class="px-4 py-2 text-left">Categoría</th>
+                        <th class="px-4 py-2 text-left">Rubro</th>
+                        <th class="px-4 py-2 text-right">Monto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for gasto in ultimos_gastos %}
+                    <tr class="border-t hover:bg-gray-50">
+                        <td class="px-4 py-2">{{ gasto.fecha|date:"d/m/Y" }}</td>
+                        <td class="px-4 py-2">
+                            <span class="inline-flex items-center space-x-1">
+                                <span class="w-2 h-2 rounded-full inline-block" style="background-color: {{ gasto.categoria.color }}"></span>
+                                <span>{{ gasto.categoria.nombre }}</span>
+                            </span>
+                        </td>
+                        <td class="px-4 py-2">{{ gasto.rubro.nombre }}</td>
+                        <td class="px-4 py-2 text-right font-medium">${{ gasto.monto|floatformat:0|intcomma }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-sm">No hay gastos registrados. <a href="{% url 'gastos:registrar' %}" class="text-blue-600 hover:underline">Registrar gasto</a></p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if gastos_por_categoria %}
+<script>
+    const ctx = document.getElementById('grafico-gastos');
+    if (ctx) {
+        const data = {{ gastos_por_categoria_json|safe }};
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: data.map(d => d.categoria__nombre),
+                datasets: [{
+                    data: data.map(d => parseFloat(d.total)),
+                    backgroundColor: data.map(d => d.categoria__color)
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } }
+                }
+            }
+        });
+    }
+</script>
+{% endif %}
+{% endblock %}

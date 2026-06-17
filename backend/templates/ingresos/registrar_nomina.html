@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ titulo }} — Finanzas Hogar{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">{{ titulo }}</h1>
+
+    <div x-data="nominaCalc()" class="bg-white rounded-lg shadow p-6">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            {% for field in form %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700">
+                    {{ field.label }}
+                    {% if field.name == 'salario_bruto' %}
+                    <span x-data="{ show: false }" class="relative inline-block">
+                        <span @mouseenter="show = true" @mouseleave="show = false" class="inline-flex items-center justify-center w-4 h-4 ml-1 text-xs text-blue-600 bg-blue-100 rounded-full cursor-help font-bold">?</span>
+                        <div x-show="show" class="absolute z-10 w-72 p-3 text-xs text-gray-700 bg-white border border-gray-200 rounded-lg shadow-lg -left-2 mt-1" style="display: none;">
+                            <p class="font-semibold mb-1">Salario Bruto</p>
+                            <p class="mb-2">Es el salario total acordado <strong>antes</strong> de aplicar las deducciones de ley (salud, pensión, solidaridad, retención).</p>
+                            <p class="font-semibold mb-1">Salario Neto</p>
+                            <p>Es el dinero que realmente recibes en tu cuenta después de todas las deducciones: Bruto − Salud − Pensión − Solidaridad − Retención.</p>
+                        </div>
+                    </span>
+                    {% endif %}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="border-t pt-4 mt-4">
+                <h3 class="font-semibold mb-2">Vista previa del cálculo</h3>
+                <div class="space-y-2 text-sm" x-show="bruto > 0">
+                    <div class="flex justify-between">
+                        <span>Salario Bruto</span>
+                        <span class="font-medium" x-text="'$' + formatMoney(bruto)"></span>
+                    </div>
+                    <div class="flex justify-between text-red-600">
+                        <span>− Salud (4%)</span>
+                        <span x-text="'-$' + formatMoney(bruto * 0.04)"></span>
+                    </div>
+                    <div class="flex justify-between text-red-600">
+                        <span>− Pensión (4%)</span>
+                        <span x-text="'-$' + formatMoney(bruto * 0.04)"></span>
+                    </div>
+                    <div class="flex justify-between text-green-600 font-bold border-t pt-2">
+                        <span>Salario Neto Estimado</span>
+                        <span x-text="'$' + formatMoney(bruto * 0.92)"></span>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 mt-2" x-show="bruto > 0">
+                    * El cálculo final se realiza al guardar usando la configuración fiscal activa.
+                </p>
+            </div>
+
+            <div class="flex justify-between pt-4">
+                <a href="{% url 'ingresos:lista' %}" class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50">Cancelar</a>
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function nominaCalc() {
+    return {
+        bruto: {{ form.salario_bruto.value|default:"0" }},
+        formatMoney(n) {
+            return Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+    }
+}
+</script>
+{% endblock %}

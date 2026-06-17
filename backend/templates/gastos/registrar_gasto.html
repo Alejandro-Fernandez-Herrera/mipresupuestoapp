@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ titulo }} — Finanzas Hogar{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">{{ titulo }}</h1>
+
+    <div x-data="gastoForm({{ form.categoria.value|default:"''" }})" class="bg-white rounded-lg shadow p-6">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            {% for field in form %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                {% if field.name == 'recurrente' %}
+                    <label class="inline-flex items-center mt-1">
+                        {{ field }}
+                        <span class="ml-2 text-sm text-gray-600">Repetir este gasto todos los meses</span>
+                    </label>
+                {% elif field.name == 'categoria' %}
+                    <div class="relative">
+                        {{ field }}
+                        <a href="{% url 'gastos:categorias' %}" class="absolute right-2 top-2 text-xs text-blue-600 hover:text-blue-800" target="_blank">+</a>
+                    </div>
+                {% else %}
+                    {{ field }}
+                {% endif %}
+                {% if field.errors %}
+                <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="flex justify-between pt-4">
+                <a href="{% url 'gastos:lista' %}" class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50">Cancelar</a>
+                <button type="submit" class="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function gastoForm(categoriaId) {
+    return {
+        categoriaId: categoriaId,
+        init() {
+            if (this.categoriaId) {
+                this.cargarRubros();
+            }
+        },
+        cargarRubros() {
+            const rubroSelect = document.querySelector('[name="rubro"]');
+            if (!this.categoriaId || !rubroSelect) return;
+            fetch('/gastos/rubros/cargar/?categoria_id=' + this.categoriaId)
+                .then(r => r.json())
+                .then(data => {
+                    rubroSelect.innerHTML = '<option value="">---------</option>';
+                    data.forEach(r => {
+                        rubroSelect.innerHTML += '<option value="' + r.id + '">' + r.nombre + '</option>';
+                    });
+                });
+        }
+    }
+}
+
+document.addEventListener('change', function(e) {
+    if (e.target && e.target.name === 'categoria') {
+        const rubroSelect = document.querySelector('[name="rubro"]');
+        if (!e.target.value) {
+            rubroSelect.innerHTML = '<option value="">---------</option>';
+            return;
+        }
+        fetch('/gastos/rubros/cargar/?categoria_id=' + e.target.value)
+            .then(r => r.json())
+            .then(data => {
+                rubroSelect.innerHTML = '<option value="">---------</option>';
+                data.forEach(r => {
+                    rubroSelect.innerHTML += '<option value="' + r.id + '">' + r.nombre + '</option>';
+                });
+            });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ titulo }} — Finanzas Hogar{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">{{ titulo }}</h1>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            {% for field in form %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700">
+                    {{ field.label }}
+                    {% if field.name == 'tasa_mensual' %}
+                    <span class="text-xs text-gray-400">(ej: 0.0234 = 2.34% mensual)</span>
+                    {% elif field.name == 'cuota_minima_pct' %}
+                    <span class="text-xs text-gray-400">(ej: 0.05 = 5%)</span>
+                    {% endif %}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+                {% if field.help_text %}
+                <p class="text-gray-400 text-xs mt-1">{{ field.help_text }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="flex justify-between pt-4">
+                <a href="{% url 'deudas:lista_tarjetas' %}" class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50">Cancelar</a>
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

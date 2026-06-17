@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Mi Perfil — Finanzas Hogar{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-bold mb-6">Mi Perfil</h1>
+
+        <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="text-gray-600">Nombre:</div>
+                <div class="font-medium">{{ user.nombre_completo }}</div>
+
+                <div class="text-gray-600">Usuario:</div>
+                <div class="font-medium">{{ user.username }}</div>
+
+                <div class="text-gray-600">Email:</div>
+                <div class="font-medium">{{ user.email }}</div>
+
+                <div class="text-gray-600">Ciudad:</div>
+                <div class="font-medium">{{ user.ciudad }}</div>
+
+                <div class="text-gray-600">SMLV vigente:</div>
+                <div class="font-medium">${{ user.smlv_vigente|floatformat:0|intcomma }}</div>
+
+                <div class="text-gray-600">UVT vigente:</div>
+                <div class="font-medium">${{ user.uvt_vigente|floatformat:2 }}</div>
+
+                <div class="text-gray-600">Auxilio transporte:</div>
+                <div class="font-medium">${{ user.auxilio_transporte|floatformat:0|intcomma }}</div>
+
+                <div class="text-gray-600">Meta tasa ahorro:</div>
+                <div class="font-medium">{{ user.meta_tasa_ahorro }}%</div>
+            </div>
+        </div>
+
+        <div class="mt-6 flex space-x-4">
+            <a href="{% url 'accounts:editar_perfil' %}"
+               class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Editar Perfil</a>
+            <a href="{% url 'accounts:configuracion_fiscal' %}"
+               class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition">Configuración Fiscal</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

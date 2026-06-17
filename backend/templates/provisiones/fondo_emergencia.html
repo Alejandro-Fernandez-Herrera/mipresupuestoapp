@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Fondo de Emergencia — Finanzas Hogar{% endblock %}
+
+{% block content %}
+<div x-data="{ mostrarAporte: false, mostrarAjuste: false }" class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold">Fondo de Emergencia</h1>
+        <div class="flex space-x-2">
+            <button @click="mostrarAporte = true" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm">+ Aporte</button>
+            <button @click="mostrarAjuste = true" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Ajustar Saldo</button>
+        </div>
+    </div>
+
+    {% if gasto_esencial > 0 %}
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-sm">Saldo Actual</p>
+            <p class="text-2xl font-bold text-green-600">${{ fondo.saldo_actual|floatformat:0|intcomma }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-sm">Gasto Esencial Mensual</p>
+            <p class="text-2xl font-bold text-red-600">${{ gasto_esencial|floatformat:0|intcomma }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-sm">Cobertura Actual</p>
+            <p class="text-2xl font-bold text-blue-600">{{ cobertura|floatformat:1 }} meses</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-sm">Aporte este mes</p>
+            <p class="text-2xl font-bold text-purple-600">${{ aporte_mes|floatformat:0|intcomma }}</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="font-semibold mb-4">Progreso hacia las metas</h2>
+
+        <div class="space-y-6">
+            <div>
+                <div class="flex justify-between text-sm mb-1">
+                    <span>Mínimo (1 mes) — <strong>${{ metas.minimo|floatformat:0|intcomma }}</strong></span>
+                    <span class="font-medium">{{ progreso_minimo }}%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div class="bg-red-500 h-4 rounded-full" style="width: {{ progreso_minimo }}%"></div>
+                </div>
+                {% if meses_minimo is not None %}
+                <p class="text-xs text-gray-500 mt-1">
+                    {% if meses_minimo == 0 %}✓ Meta alcanzada{% else %}~{{ meses_minimo }} meses al ritmo actual{% endif %}
+                </p>
+                {% endif %}
+            </div>
+
+            <div>
+                <div class="flex justify-between text-sm mb-1">
+                    <span>Recomendado (3 meses) — <strong>${{ metas.recomendado|floatformat:0|intcomma }}</strong></span>
+                    <span class="font-medium">{{ progreso_recomendado }}%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div class="bg-yellow-500 h-4 rounded-full" style="width: {{ progreso_recomendado }}%"></div>
+                </div>
+                {% if meses_recomendado is not None %}
+                <p class="text-xs text-gray-500 mt-1">
+                    {% if meses_recomendado == 0 %}✓ Meta alcanzada{% else %}~{{ meses_recomendado }} meses al ritmo actual{% endif %}
+                </p>
+                {% endif %}
+            </div>
+
+            <div>
+                <div class="flex justify-between text-sm mb-1">
+                    <span>Ideal (6 meses) — <strong>${{ metas.ideal|floatformat:0|intcomma }}</strong></span>
+                    <span class="font-medium">{{ progreso_ideal }}%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div class="bg-green-500 h-4 rounded-full" style="width: {{ progreso_ideal }}%"></div>
+                </div>
+                {% if meses_ideal is not None %}
+                <p class="text-xs text-gray-500 mt-1">
+                    {% if meses_ideal == 0 %}✓ Meta alcanzada{% else %}~{{ meses_ideal }} meses al ritmo actual{% endif %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="bg-white rounded-lg shadow p-6 text-center">
+        <p class="text-gray-500">Registra gastos en categorías esenciales (Vivienda, Alimentación, Transporte, Salud, Deudas) para calcular tu gasto esencial mensual.</p>
+        <a href="{% url 'gastos:registrar' %}" class="inline-block mt-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Registrar Gasto</a>
+    </div>
+    {% endif %}
+
+    {% if aportes %}
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-4 py-3 bg-gray-50 border-b">
+            <h2 class="font-semibold">Historial de Aportes</h2>
+        </div>
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-2 text-left">Fecha</th>
+                    <th class="px-4 py-2 text-right">Monto</th>
+                    <th class="px-4 py-2 text-center">Período</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for aporte in aportes %}
+                <tr class="border-t hover:bg-gray-50">
+                    <td class="px-4 py-2">{{ aporte.fecha|date:"d/m/Y" }}</td>
+                    <td class="px-4 py-2 text-right font-medium text-green-600">+${{ aporte.monto|floatformat:0|intcomma }}</td>
+                    <td class="px-4 py-2 text-center">{{ aporte.mes }}/{{ aporte.anio }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Modal Aporte -->
+    <div x-show="mostrarAporte" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="display: none;">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md" @click.away="mostrarAporte = false">
+            <h3 class="font-semibold mb-4">Registrar Aporte</h3>
+            <form method="post" action="{% url 'provisiones:aporte' %}" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="mes" value="{{ mes }}">
+                <input type="hidden" name="anio" value="{{ anio }}">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Monto (COP)</label>
+                    <input type="number" name="monto" step="1" min="1" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Ej: 500000">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Fecha</label>
+                    <input type="date" name="fecha" value="{{ fecha_hoy|date:'Y-m-d' }}"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" @click="mostrarAporte = false" class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Ajuste Saldo -->
+    <div x-show="mostrarAjuste" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="display: none;">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md" @click.away="mostrarAjuste = false">
+            <h3 class="font-semibold mb-4">Ajustar Saldo del Fondo</h3>
+            <p class="text-sm text-gray-500 mb-4">Útil para establecer el saldo inicial o corregir después de un retiro.</p>
+            <form method="post" action="{% url 'provisiones:ajustar_saldo' %}" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Saldo actual (COP)</label>
+                    <input type="number" name="saldo_actual" step="1" min="0" required
+                           value="{{ fondo.saldo_actual|floatformat:0 }}"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" @click="mostrarAjuste = false" class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
