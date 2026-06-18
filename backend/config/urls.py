@@ -15,6 +15,7 @@ urlpatterns = [
     path('deudas/', include('apps.deudas.urls', namespace='deudas')),
     path('provisiones/', include('apps.provisiones.urls', namespace='provisiones')),
     path('indicadores/', include('apps.indicadores.urls', namespace='indicadores')),
+    path('proyecciones/', include('apps.proyecciones.urls', namespace='proyecciones')),
     path('reportes/', include('apps.reportes.urls', namespace='reportes')),
     path('', accounts_views.dashboard, name='dashboard'),
 ]

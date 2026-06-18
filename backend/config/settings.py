@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'apps.provisiones',
     'apps.indicadores',
     'apps.reportes',
+    'apps.proyecciones',
 ]
 
 MIDDLEWARE = [

@@ -20,6 +20,12 @@ from apps.indicadores.services import (
     obtener_resumen_deudas,
     obtener_provisiones_activas,
 )
+from apps.proyecciones.models import Escenario
+from apps.proyecciones.services import (
+    calcular_ahorro_proyectado,
+    calcular_mes_meta_emergencia,
+)
+from apps.proyecciones.views import _crear_escenarios_defecto
 
 
 MESES_NOMBRE = [
@@ -106,6 +112,30 @@ def dashboard(request):
     # Alertas de prestaciones próximas
     alertas_prestaciones = verificar_alertas_prestaciones(request.user)
 
+    # Proyecciones para dashboard widget
+    proyecciones_dashboard = None
+    escenario_realista = Escenario.objects.filter(
+        usuario=request.user, nombre='realista', activo=True
+    ).first()
+    if not escenario_realista:
+        _crear_escenarios_defecto(request.user)
+        escenario_realista = Escenario.objects.filter(
+            usuario=request.user, nombre='realista', activo=True
+        ).first()
+
+    if escenario_realista:
+        proy = calcular_ahorro_proyectado(request.user, 12, escenario_realista)
+        meta_emergencia = calcular_mes_meta_emergencia(request.user, escenario_realista)
+        meta_rec = meta_emergencia.get('recomendado', {})
+        proyecciones_dashboard = {
+            'horizonte': 12,
+            'escenario_nombre': 'Realista',
+            'ahorro_mensual': proy['ahorro_mensual_promedio'],
+            'ahorro_acumulado': proy['ahorro_acumulado'],
+            'meta_emergencia_alcanza': meta_rec.get('alcanza', False),
+            'meta_emergencia_meses': meta_rec.get('meses_necesarios'),
+        }
+
     return render(request, 'dashboard.html', {
         'mes': mes,
         'anio': anio,
@@ -135,6 +165,7 @@ def dashboard(request):
         'tendencia_ig_json': tendencia_ig,
         'resumen_deudas': resumen_deudas,
         'provisiones_activas': provisiones_activas,
+        'proyecciones_dashboard': proyecciones_dashboard,
     })
 
 

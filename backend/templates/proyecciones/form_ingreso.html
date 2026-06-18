@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}{{ accion }} Proyección de Ingreso — Finanzas Hogar{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <div class="bg-white rounded-lg shadow p-6">
+        <h1 class="text-xl font-bold mb-4">{{ accion }} Proyección de Ingreso</h1>
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {% for field in form %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <div class="flex justify-end space-x-3 pt-4">
+                <a href="{% url 'proyecciones:ingresos' %}" class="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50">Cancelar</a>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
