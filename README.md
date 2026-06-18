@@ -6,26 +6,26 @@ Aplicación web local para la gestión de finanzas personales y del hogar, dise�
 
 ## ✨ Funcionalidades
 
-### MVP v0.1 (en construcción)
+### v1.0 (completado)
 - [x] Especificaciones y arquitectura
 - [x] Test harness (`tests/conftest.py`)
-- [ ] Autenticación con sesiones individuales (30 min de inactividad)
-- [ ] **Módulo de nómina colombiana** — bruto → neto con deducciones legales (salud, pensión, fondo solidaridad, retención DIAN)
-- [ ] Registro de ingresos adicionales (horas extra, comisiones, honorarios, ingresos pasivos)
-- [ ] Proyección de prestaciones sociales (prima, cesantías, intereses, vacaciones)
-- [ ] Categorías y rubros de gastos (14 categorías sugeridas, totalmente editables)
-- [ ] Registro de gastos con historial mes a mes
-- [ ] Cálculo automático de ahorro mensual y tasa de ahorro
-- [ ] Fondo de emergencia con progreso hacia 1, 3 y 6 meses de cobertura
-- [ ] **Créditos de consumo** con tabla de amortización French completa
+- [x] Autenticación con sesiones individuales (30 min de inactividad)
+- [x] **Módulo de nómina colombiana** — bruto → neto con deducciones legales (salud, pensión, fondo solidaridad, retención DIAN)
+- [x] Registro de ingresos adicionales (horas extra, comisiones, honorarios, ingresos pasivos)
+- [x] Proyección de prestaciones sociales (prima, cesantías, intereses, vacaciones)
+- [x] Categorías y rubros de gastos (14 categorías sugeridas, totalmente editables)
+- [x] Registro de gastos con historial mes a mes
+- [x] Cálculo automático de ahorro mensual y tasa de ahorro
+- [x] Fondo de emergencia con progreso hacia 1, 3 y 6 meses de cobertura
+- [x] **Créditos de consumo** con tabla de amortización French completa
 
-### v1.0 (próximas iteraciones)
-- [ ] Tarjetas de crédito (cuota mínima, semáforo de uso, intereses)
-- [ ] Provisiones para pagos futuros (SOAT, matrículas, vacaciones, etc.)
-- [ ] Indicadores de salud financiera con semáforo (ratio endeudamiento, tasa ahorro, cobertura emergencia)
-- [ ] Proyecciones a 6, 12 y 24 meses con escenarios optimista/realista/conservador
-- [ ] Dashboard con gráficos interactivos
-- [ ] Exportar reportes a PDF y CSV
+### v1.0 (completado)
+- [x] Tarjetas de crédito (cuota mínima, semáforo de uso, intereses)
+- [x] Provisiones para pagos futuros (SOAT, matrículas, vacaciones, etc.)
+- [x] Indicadores de salud financiera con semáforo (ratio endeudamiento, tasa ahorro, cobertura emergencia)
+- [x] Proyecciones a 6, 12 y 24 meses con escenarios optimista/realista/conservador
+- [x] Dashboard con gráficos interactivos
+- [x] Exportar reportes a PDF, CSV y Excel
 
 ### Backlog futuro
 - [ ] Importación de extractos bancarios CSV

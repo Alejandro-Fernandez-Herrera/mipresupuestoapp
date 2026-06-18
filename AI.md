@@ -461,7 +461,7 @@ Se conservan los últimos 30 días automáticamente.
 ## 10. ESTADO ACTUAL DEL PROYECTO
 
 ```
-Sprint actual: S10 — Dashboard integrado con todos los módulos (HU-014)
+Sprint actual: S12 — Exportar PDF + CSV · Pulido UI · Documentación · Release (HU-015)
 Última actualización: 2026-06-17
 
 COMPLETADO:
@@ -481,6 +481,8 @@ COMPLETADO:
   ✅ S8: Provisiones + catálogo Colombia (HU-012)
   ✅ S9: Indicadores salud financiera + Prestaciones (HU-018, HU-019)
   ✅ S10: Dashboard integrado con todos los módulos (HU-014)
+  ✅ S11: Proyecciones y escenarios (HU-013)
+  ✅ S12: Exportar PDF + CSV · Pulido UI · Documentación · Release (HU-015)
 
 ### S9: Indicadores Salud Financiera + Prestaciones (HU-018, HU-019)
 
@@ -516,6 +518,44 @@ COMPLETADO:
 - Widget de prestaciones próximas con alertas
 ```
 
+### S11: Proyecciones y Escenarios (HU-013)
+
+**HU-013 — Proyecciones Financieras (RF-100 a RF-105)**
+- RF-100: Proyección de ingresos y gastos a 6, 12 y 24 meses
+- RF-101: Tres escenarios: optimista, realista, conservador
+- RF-102: Factor de ajuste por escenario (ej: +10% ingreso en optimista)
+- RF-103: Proyección de ahorro acumulado en el horizonte
+- RF-104: Proyección de cierre de provisiones activas
+- RF-105: API JSON para gráficos en el frontend
+
+### S12: Exportar PDF + CSV · Pulido UI · Documentación · Release (HU-015)
+
+**HU-015 — Exportar Reportes (RF-120 a RF-123)**
+- RF-120: Reporte PDF mensual con WeasyPrint — resumen, indicadores, gastos por categoría, ingresos, deudas, provisiones
+- RF-121: Exportar datos a CSV con filtro por mes
+- RF-122: Exportar datos a Excel (openpyxl) con hojas: Resumen, Ingresos, Gastos, Deudas, Provisiones, Fondo Emergencia
+- RF-123: Marca de fecha de generación en todos los archivos exportados
+
+**Componentes creados:**
+- `apps/reportes/services.py` — 3 servicios: `generar_pdf_mes()`, `exportar_csv()`, `exportar_excel()`
+- `apps/reportes/views.py` — 3 vistas decoradas con `@login_required`
+- `apps/reportes/urls.py` — rutas `/reportes/pdf/`, `/reportes/csv/`, `/reportes/excel/`
+- Template `reportes/reporte_mensual.html` — diseñado para WeasyPrint (sin JS, CSS inline)
+- Navbar con enlace "Reportes"
+- Dashboard con botones PDF/CSV/Excel contextuales al mes/año visible
+- 17 tests unitarios para servicios y vistas de exportación
+
+**Pulido UI:**
+- Navbar: enlace "Reportes" agregado entre Proyecciones e Indicadores
+- Dashboard: botones de exportación PDF, CSV y Excel con filtro mes/año
+
+**Release v1.0:**
+- Dependencias WeasyPrint agregadas al Dockerfile (libpango, libcairo, libgdk-pixbuf)
+- `black .` ejecutado
+- 150 tests pasando, 1 xfail esperado
+- Documentación actualizada (AI.md, README.md)
+
+---
 ### S10: Dashboard Integrado con todos los módulos (HU-014)
 
 **RF-112 — Gráfico de línea: tendencia ingresos vs. gastos últimos 6 meses**

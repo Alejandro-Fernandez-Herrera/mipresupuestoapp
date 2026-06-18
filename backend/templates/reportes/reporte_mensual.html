@@ -1,0 +1,242 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="es-co">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte Mensual — Finanzas Hogar</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+            @bottom-center {
+                content: "Generado: {{ generado_en }} | Página " counter(page) " de " counter(pages);
+                font-size: 8px;
+                color: #666;
+            }
+        }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 10px; color: #333; }
+        h1 { font-size: 18px; color: #1E3A5F; margin-bottom: 4px; }
+        h2 { font-size: 14px; color: #1E3A5F; border-bottom: 2px solid #1E3A5F; padding-bottom: 2px; margin-top: 20px; }
+        h3 { font-size: 12px; color: #555; margin: 10px 0 4px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header .sub { font-size: 10px; color: #888; }
+        table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; }
+        th { background-color: #1E3A5F; color: white; padding: 6px 8px; text-align: left; font-size: 9px; }
+        td { padding: 4px 8px; border-bottom: 1px solid #ddd; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .total-row { font-weight: bold; background-color: #e9ecef !important; }
+        .grid-4 { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .card { flex: 1 1 22%; border: 1px solid #ddd; border-radius: 4px; padding: 10px; text-align: center; min-width: 100px; }
+        .card .label { font-size: 8px; color: #888; }
+        .card .value { font-size: 14px; font-weight: bold; margin: 4px 0; }
+        .card .verde { color: #16a34a; }
+        .card .amarillo { color: #ca8a04; }
+        .card .rojo { color: #dc2626; }
+        .barra { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin: 4px 0; }
+        .barra-verde { flex: 0 0 33%; background: #16a34a; }
+        .barra-amarillo { flex: 0 0 33%; background: #ca8a04; }
+        .barra-rojo { flex: 0 0 34%; background: #dc2626; }
+        .footer { text-align: center; font-size: 8px; color: #999; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 8px; }
+        .semaforo-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Reporte Financiero Mensual</h1>
+    <div>{{ mes_nombre }} {{ anio }}</div>
+    <div class="sub">{{ usuario.nombre_completo }} · Generado: {{ generado_en }}</div>
+</div>
+
+<div class="grid-4">
+    <div class="card">
+        <div class="label">Ingresos Netos</div>
+        <div class="value verde">${{ total_ingresos|floatformat:0|intcomma }}</div>
+    </div>
+    <div class="card">
+        <div class="label">Gastos Totales</div>
+        <div class="value rojo">${{ total_gastos|floatformat:0|intcomma }}</div>
+    </div>
+    <div class="card">
+        <div class="label">Ahorro Neto</div>
+        <div class="value {% if ahorro_neto >= 0 %}verde{% else %}rojo{% endif %}">${{ ahorro_neto|floatformat:0|intcomma }}</div>
+    </div>
+    <div class="card">
+        <div class="label">Tasa de Ahorro</div>
+        <div class="value">{{ tasa_ahorro|floatformat:1 }}%</div>
+    </div>
+</div>
+
+<h2>Indicadores de Salud Financiera</h2>
+<table>
+    <tr>
+        <th>Indicador</th>
+        <th class="text-right">Valor</th>
+        <th class="text-center">Semáforo</th>
+    </tr>
+    <tr>
+        <td>Ratio de Endeudamiento</td>
+        <td class="text-right">{{ indicadores.ratio_endeudamiento|floatformat:1 }}%</td>
+        <td class="text-center">
+            <span class="semaforo-indicator" style="background:{% if indicadores.semaforo_endeudamiento == 'verde' %}#16a34a{% elif indicadores.semaforo_endeudamiento == 'amarillo' %}#ca8a04{% else %}#dc2626{% endif %};"></span>
+            {{ indicadores.semaforo_endeudamiento }}
+        </td>
+    </tr>
+    <tr>
+        <td>Tasa de Ahorro</td>
+        <td class="text-right">{{ indicadores.tasa_ahorro|floatformat:1 }}%</td>
+        <td class="text-center">
+            <span class="semaforo-indicator" style="background:{% if indicadores.semaforo_ahorro == 'verde' %}#16a34a{% elif indicadores.semaforo_ahorro == 'amarillo' %}#ca8a04{% else %}#dc2626{% endif %};"></span>
+            {{ indicadores.semaforo_ahorro }}
+        </td>
+    </tr>
+    <tr>
+        <td>Cobertura Fondo Emergencia</td>
+        <td class="text-right">{{ indicadores.cobertura_emergencia|floatformat:1 }} meses</td>
+        <td class="text-center">
+            <span class="semaforo-indicator" style="background:{% if indicadores.semaforo_emergencia == 'verde' %}#16a34a{% elif indicadores.semaforo_emergencia == 'amarillo' %}#ca8a04{% else %}#dc2626{% endif %};"></span>
+            {{ indicadores.semaforo_emergencia }}
+        </td>
+    </tr>
+    <tr>
+        <td>Presión Gastos Fijos</td>
+        <td class="text-right">{{ indicadores.presion_gastos_fijos|floatformat:1 }}%</td>
+        <td class="text-center">—</td>
+    </tr>
+</table>
+
+<h2>Ingresos</h2>
+{% if ingresos_nomina or otros_ingresos %}
+<table>
+    <tr>
+        <th>Tipo</th>
+        <th>Detalle</th>
+        <th class="text-right">Valor COP</th>
+    </tr>
+    {% for n in ingresos_nomina %}
+    <tr>
+        <td>Nómina</td>
+        <td>{{ mes_nombre }} {{ anio }}</td>
+        <td class="text-right">${{ n.salario_neto|floatformat:0|intcomma }}</td>
+    </tr>
+    {% endfor %}
+    {% for o in otros_ingresos %}
+    <tr>
+        <td>Otro ingreso</td>
+        <td>{{ o.get_tipo_display }}</td>
+        <td class="text-right">${{ o.monto|floatformat:0|intcomma }}</td>
+    </tr>
+    {% endfor %}
+    <tr class="total-row">
+        <td colspan="2">Total Ingresos</td>
+        <td class="text-right">${{ total_ingresos|floatformat:0|intcomma }}</td>
+    </tr>
+</table>
+{% else %}
+<p style="color: #888; font-style: italic;">No hay ingresos registrados para este mes.</p>
+{% endif %}
+
+<h2>Gastos por Categoría</h2>
+{% if gastos_por_categoria %}
+<table>
+    <tr>
+        <th>Categoría</th>
+        <th class="text-right">Total COP</th>
+    </tr>
+    {% for gc in gastos_por_categoria %}
+    <tr>
+        <td><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:{{ gc.categoria__color }};margin-right:6px;"></span>{{ gc.categoria__nombre }}</td>
+        <td class="text-right">${{ gc.total|floatformat:0|intcomma }}</td>
+    </tr>
+    {% endfor %}
+    <tr class="total-row">
+        <td>Total Gastos</td>
+        <td class="text-right">${{ total_gastos|floatformat:0|intcomma }}</td>
+    </tr>
+</table>
+{% else %}
+<p style="color: #888; font-style: italic;">No hay gastos registrados para este mes.</p>
+{% endif %}
+
+{% if gastos %}
+<h3>Detalle de Gastos</h3>
+<table>
+    <tr>
+        <th>Fecha</th>
+        <th>Categoría</th>
+        <th>Rubro</th>
+        <th>Descripción</th>
+        <th class="text-right">Valor COP</th>
+    </tr>
+    {% for g in gastos %}
+    <tr>
+        <td>{{ g.fecha|date:"d/m/Y" }}</td>
+        <td>{{ g.categoria.nombre }}</td>
+        <td>{{ g.rubro.nombre }}</td>
+        <td>{{ g.descripcion|default:"" }}</td>
+        <td class="text-right">${{ g.monto|floatformat:0|intcomma }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+<h2>Deudas</h2>
+{% if creditos_activos or tarjetas_activas %}
+<table>
+    <tr>
+        <th>Tipo</th>
+        <th>Nombre</th>
+        <th class="text-right">Cuota / Mínimo</th>
+        <th class="text-right">Saldo</th>
+    </tr>
+    {% for c in creditos_activos %}
+    <tr>
+        <td>Crédito</td>
+        <td>{{ c.nombre }}</td>
+        <td class="text-right">${{ c.cuota_mensual|floatformat:0|intcomma }}</td>
+        <td class="text-right">${{ c.capital|floatformat:0|intcomma }}</td>
+    </tr>
+    {% endfor %}
+    {% for t in tarjetas_activas %}
+    <tr>
+        <td>Tarjeta</td>
+        <td>{{ t.nombre }}</td>
+        <td class="text-right">${{ t.cuota_minima_mes|floatformat:0|intcomma }}</td>
+        <td class="text-right">${{ t.saldo_actual|floatformat:0|intcomma }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p style="color: #888; font-style: italic;">No hay deudas activas.</p>
+{% endif %}
+
+<h2>Provisiones Activas</h2>
+{% if provisiones_activas %}
+<table>
+    <tr>
+        <th>Concepto</th>
+        <th class="text-right">Monto Total</th>
+        <th class="text-right">Acumulado</th>
+        <th>Fecha Pago</th>
+    </tr>
+    {% for p in provisiones_activas %}
+    <tr>
+        <td>{{ p.concepto }}</td>
+        <td class="text-right">${{ p.monto_total|floatformat:0|intcomma }}</td>
+        <td class="text-right">${{ p.ahorro_acumulado|floatformat:0|intcomma }}</td>
+        <td>{{ p.fecha_pago|date:"d/m/Y" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p style="color: #888; font-style: italic;">No hay provisiones activas.</p>
+{% endif %}
+
+<div class="footer">
+    Finanzas Hogar y Personales — Colombia · {{ generado_en }}
+</div>
+
+</body>
+</html>

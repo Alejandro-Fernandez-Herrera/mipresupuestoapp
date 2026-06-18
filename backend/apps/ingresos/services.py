@@ -173,10 +173,10 @@ def _calcular_fechas_prestaciones(anio):
         dict con las fechas de pago de cada prestación
     """
     return {
-        'prima_junio': date(anio, 6, 30),
-        'prima_diciembre': date(anio, 12, 20),
-        'cesantias': date(anio + 1, 2, 14),
-        'intereses_cesantias': date(anio + 1, 1, 31),
+        "prima_junio": date(anio, 6, 30),
+        "prima_diciembre": date(anio, 12, 20),
+        "cesantias": date(anio + 1, 2, 14),
+        "intereses_cesantias": date(anio + 1, 1, 31),
     }
 
 
@@ -208,16 +208,16 @@ def calcular_prestaciones(salario_base, meses, config, anio=None):
     return {
         "prima_servicios": {
             "monto": prima,
-            "fecha_pago_1": fechas['prima_junio'],
-            "fecha_pago_2": fechas['prima_diciembre'],
+            "fecha_pago_1": fechas["prima_junio"],
+            "fecha_pago_2": fechas["prima_diciembre"],
         },
         "cesantias": {
             "monto": cesantias,
-            "fecha_pago": fechas['cesantias'],
+            "fecha_pago": fechas["cesantias"],
         },
         "intereses_cesantias": {
             "monto": intereses,
-            "fecha_pago": fechas['intereses_cesantias'],
+            "fecha_pago": fechas["intereses_cesantias"],
         },
         "vacaciones": {
             "monto_mensual": vacaciones,
@@ -243,14 +243,14 @@ def calcular_alerta_prestacion(fecha_pago, dias_alerta=45):
     dias_restantes = (fecha_pago - hoy).days
 
     if dias_restantes < 0:
-        return {'alerta': False, 'dias_restantes': dias_restantes, 'nivel': 'vencida'}
+        return {"alerta": False, "dias_restantes": dias_restantes, "nivel": "vencida"}
 
     if dias_restantes <= 7:
-        return {'alerta': True, 'dias_restantes': dias_restantes, 'nivel': 'critico'}
+        return {"alerta": True, "dias_restantes": dias_restantes, "nivel": "critico"}
     elif dias_restantes <= dias_alerta:
-        return {'alerta': True, 'dias_restantes': dias_restantes, 'nivel': 'proximo'}
+        return {"alerta": True, "dias_restantes": dias_restantes, "nivel": "proximo"}
 
-    return {'alerta': False, 'dias_restantes': dias_restantes, 'nivel': 'normal'}
+    return {"alerta": False, "dias_restantes": dias_restantes, "nivel": "normal"}
 
 
 def verificar_alertas_prestaciones(usuario):
@@ -265,15 +265,16 @@ def verificar_alertas_prestaciones(usuario):
         list de dicts con prestación + alerta para las que están próximas
     """
     from .models import PrestacionSocial
-    prestaciones = PrestacionSocial.objects.filter(
-        usuario=usuario, pagada=False
-    )
+
+    prestaciones = PrestacionSocial.objects.filter(usuario=usuario, pagada=False)
     alertas = []
     for p in prestaciones:
         info_alerta = calcular_alerta_prestacion(p.fecha_pago_esperada)
-        if info_alerta['alerta']:
-            alertas.append({
-                'prestacion': p,
-                'alerta': info_alerta,
-            })
+        if info_alerta["alerta"]:
+            alertas.append(
+                {
+                    "prestacion": p,
+                    "alerta": info_alerta,
+                }
+            )
     return alertas
