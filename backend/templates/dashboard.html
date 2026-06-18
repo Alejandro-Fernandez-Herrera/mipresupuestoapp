@@ -17,6 +17,9 @@
             </select>
             <input type="number" x-model="anio" class="border border-gray-300 rounded px-3 py-1 text-sm w-20">
             <button @click="window.location.href = '?mes=' + mes + '&anio=' + anio" class="bg-gray-200 text-gray-600 px-2 py-1 rounded text-sm hover:bg-gray-300" title="Actualizar">↻</button>
+            <a :href="'{% url "reportes:reporte_pdf" %}?mes=' + mes + '&anio=' + anio" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600" title="Exportar PDF mensual">PDF</a>
+            <a :href="'{% url "reportes:exportar_csv" %}?mes=' + mes + '&anio=' + anio" class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600" title="Exportar CSV">CSV</a>
+            <a :href="'{% url "reportes:exportar_excel" %}?mes=' + mes + '&anio=' + anio" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600" title="Exportar Excel">Excel</a>
         </div>
     </div>
 

@@ -27,75 +27,92 @@ from apps.proyecciones.services import (
 )
 from apps.proyecciones.views import _crear_escenarios_defecto
 
-
 MESES_NOMBRE = [
-    '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    "",
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
 ]
 
 
 @login_required
 def cerrar_sesion(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         logout(request)
-        return render(request, 'accounts/sesion_cerrada.html')
-    return render(request, 'accounts/confirmar_cierre.html')
+        return render(request, "accounts/sesion_cerrada.html")
+    return render(request, "accounts/confirmar_cierre.html")
 
 
 def registro(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = RegistroForm(request.POST)
         if form.is_valid():
             user = form.save()
-            user.backend = 'apps.accounts.backends.EmailOrUsernameBackend'
+            user.backend = "apps.accounts.backends.EmailOrUsernameBackend"
             login(request, user)
-            messages.success(request, '¡Bienvenido! Tu cuenta ha sido creada.')
-            return redirect('dashboard')
+            messages.success(request, "¡Bienvenido! Tu cuenta ha sido creada.")
+            return redirect("dashboard")
     else:
         form = RegistroForm()
-    return render(request, 'accounts/registro.html', {'form': form})
+    return render(request, "accounts/registro.html", {"form": form})
 
 
 @login_required
 def dashboard(request):
     hoy = date.today()
-    mes = int(request.GET.get('mes', hoy.month))
-    anio = int(request.GET.get('anio', hoy.year))
+    mes = int(request.GET.get("mes", hoy.month))
+    anio = int(request.GET.get("anio", hoy.year))
 
     # Calcular todos los indicadores usando el módulo especializado
     indicadores = calcular_indicadores_mes(request.user, mes, anio)
     guardar_historial(request.user, mes, anio, indicadores)
 
-    total_ingresos = indicadores['ingreso_neto']
-    total_gastos = indicadores['gastos_totales']
-    ahorro_neto = indicadores['ahorro_neto']
-    tasa_ahorro = indicadores['tasa_ahorro']
+    total_ingresos = indicadores["ingreso_neto"]
+    total_gastos = indicadores["gastos_totales"]
+    ahorro_neto = indicadores["ahorro_neto"]
+    tasa_ahorro = indicadores["tasa_ahorro"]
     meta_tasa = request.user.meta_tasa_ahorro
-    gastos_fijos = indicadores['gastos_fijos']
-    presion_gastos_fijos = indicadores['presion_gastos_fijos']
-    gasto_esencial = indicadores['gasto_esencial']
-    cobertura_emergencia = indicadores['cobertura_emergencia']
-    saldo_fondo = indicadores['saldo_fondo']
-    ratio_endeudamiento = indicadores['ratio_endeudamiento']
-    semaforo_endeudamiento = indicadores['semaforo_endeudamiento']
-    semaforo_ahorro = indicadores['semaforo_ahorro']
-    semaforo_emergencia = indicadores['semaforo_emergencia']
+    gastos_fijos = indicadores["gastos_fijos"]
+    presion_gastos_fijos = indicadores["presion_gastos_fijos"]
+    gasto_esencial = indicadores["gasto_esencial"]
+    cobertura_emergencia = indicadores["cobertura_emergencia"]
+    saldo_fondo = indicadores["saldo_fondo"]
+    ratio_endeudamiento = indicadores["ratio_endeudamiento"]
+    semaforo_endeudamiento = indicadores["semaforo_endeudamiento"]
+    semaforo_ahorro = indicadores["semaforo_ahorro"]
+    semaforo_emergencia = indicadores["semaforo_emergencia"]
 
     # Tendencias respecto al mes anterior
     tendencias = {}
-    for campo in ['tasa_ahorro', 'ratio_endeudamiento', 'cobertura_emergencia', 'presion_gastos_fijos']:
+    for campo in [
+        "tasa_ahorro",
+        "ratio_endeudamiento",
+        "cobertura_emergencia",
+        "presion_gastos_fijos",
+    ]:
         tendencias[campo] = calcular_tendencia(request.user, campo, mes, anio)
 
     gastos_por_categoria = (
         Gasto.objects.filter(usuario=request.user, mes=mes, anio=anio)
-        .values('categoria__nombre', 'categoria__color')
-        .annotate(total=Sum('monto'))
-        .order_by('-total')
+        .values("categoria__nombre", "categoria__color")
+        .annotate(total=Sum("monto"))
+        .order_by("-total")
     )
 
-    ultimos_gastos = Gasto.objects.filter(
-        usuario=request.user
-    ).select_related('categoria', 'rubro').order_by('-fecha', '-creado_en')[:10]
+    ultimos_gastos = (
+        Gasto.objects.filter(usuario=request.user)
+        .select_related("categoria", "rubro")
+        .order_by("-fecha", "-creado_en")[:10]
+    )
 
     # Diagnóstico automático
     diagnostico = generar_diagnostico(indicadores)
@@ -115,90 +132,98 @@ def dashboard(request):
     # Proyecciones para dashboard widget
     proyecciones_dashboard = None
     escenario_realista = Escenario.objects.filter(
-        usuario=request.user, nombre='realista', activo=True
+        usuario=request.user, nombre="realista", activo=True
     ).first()
     if not escenario_realista:
         _crear_escenarios_defecto(request.user)
         escenario_realista = Escenario.objects.filter(
-            usuario=request.user, nombre='realista', activo=True
+            usuario=request.user, nombre="realista", activo=True
         ).first()
 
     if escenario_realista:
         proy = calcular_ahorro_proyectado(request.user, 12, escenario_realista)
         meta_emergencia = calcular_mes_meta_emergencia(request.user, escenario_realista)
-        meta_rec = meta_emergencia.get('recomendado', {})
+        meta_rec = meta_emergencia.get("recomendado", {})
         proyecciones_dashboard = {
-            'horizonte': 12,
-            'escenario_nombre': 'Realista',
-            'ahorro_mensual': proy['ahorro_mensual_promedio'],
-            'ahorro_acumulado': proy['ahorro_acumulado'],
-            'meta_emergencia_alcanza': meta_rec.get('alcanza', False),
-            'meta_emergencia_meses': meta_rec.get('meses_necesarios'),
+            "horizonte": 12,
+            "escenario_nombre": "Realista",
+            "ahorro_mensual": proy["ahorro_mensual_promedio"],
+            "ahorro_acumulado": proy["ahorro_acumulado"],
+            "meta_emergencia_alcanza": meta_rec.get("alcanza", False),
+            "meta_emergencia_meses": meta_rec.get("meses_necesarios"),
         }
 
-    return render(request, 'dashboard.html', {
-        'mes': mes,
-        'anio': anio,
-        'mes_nombre': MESES_NOMBRE[mes],
-        'total_ingresos': total_ingresos,
-        'total_gastos': total_gastos,
-        'ahorro_neto': ahorro_neto,
-        'tasa_ahorro': tasa_ahorro,
-        'meta_tasa': meta_tasa,
-        'gastos_fijos': gastos_fijos,
-        'presion_gastos_fijos': presion_gastos_fijos,
-        'gastos_por_categoria': list(gastos_por_categoria),
-        'gastos_por_categoria_json': list(gastos_por_categoria),
-        'ultimos_gastos': ultimos_gastos,
-        'gasto_esencial': gasto_esencial,
-        'cobertura_emergencia': cobertura_emergencia,
-        'saldo_fondo': saldo_fondo,
-        'ratio_endeudamiento': ratio_endeudamiento,
-        'semaforo_endeudamiento': semaforo_endeudamiento,
-        'semaforo_ahorro': semaforo_ahorro,
-        'semaforo_emergencia': semaforo_emergencia,
-        'diagnostico': diagnostico,
-        'tendencias': tendencias,
-        'alertas_prestaciones': alertas_prestaciones,
-        'indicadores': indicadores,
-        'tendencia_ingresos_gastos': tendencia_ig,
-        'tendencia_ig_json': tendencia_ig,
-        'resumen_deudas': resumen_deudas,
-        'provisiones_activas': provisiones_activas,
-        'proyecciones_dashboard': proyecciones_dashboard,
-    })
+    return render(
+        request,
+        "dashboard.html",
+        {
+            "mes": mes,
+            "anio": anio,
+            "mes_nombre": MESES_NOMBRE[mes],
+            "total_ingresos": total_ingresos,
+            "total_gastos": total_gastos,
+            "ahorro_neto": ahorro_neto,
+            "tasa_ahorro": tasa_ahorro,
+            "meta_tasa": meta_tasa,
+            "gastos_fijos": gastos_fijos,
+            "presion_gastos_fijos": presion_gastos_fijos,
+            "gastos_por_categoria": list(gastos_por_categoria),
+            "gastos_por_categoria_json": list(gastos_por_categoria),
+            "ultimos_gastos": ultimos_gastos,
+            "gasto_esencial": gasto_esencial,
+            "cobertura_emergencia": cobertura_emergencia,
+            "saldo_fondo": saldo_fondo,
+            "ratio_endeudamiento": ratio_endeudamiento,
+            "semaforo_endeudamiento": semaforo_endeudamiento,
+            "semaforo_ahorro": semaforo_ahorro,
+            "semaforo_emergencia": semaforo_emergencia,
+            "diagnostico": diagnostico,
+            "tendencias": tendencias,
+            "alertas_prestaciones": alertas_prestaciones,
+            "indicadores": indicadores,
+            "tendencia_ingresos_gastos": tendencia_ig,
+            "tendencia_ig_json": tendencia_ig,
+            "resumen_deudas": resumen_deudas,
+            "provisiones_activas": provisiones_activas,
+            "proyecciones_dashboard": proyecciones_dashboard,
+        },
+    )
 
 
 @login_required
 def perfil(request):
-    return render(request, 'accounts/perfil.html', {'user': request.user})
+    return render(request, "accounts/perfil.html", {"user": request.user})
 
 
 @login_required
 def editar_perfil(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = PerfilForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Perfil actualizado correctamente.')
-            return redirect('accounts:perfil')
+            messages.success(request, "Perfil actualizado correctamente.")
+            return redirect("accounts:perfil")
     else:
         form = PerfilForm(instance=request.user)
-    return render(request, 'accounts/editar_perfil.html', {'form': form})
+    return render(request, "accounts/editar_perfil.html", {"form": form})
 
 
 @login_required
 def configuracion_fiscal(request):
-    configs = ConfiguracionFiscal.objects.all().order_by('-anio')
-    if request.method == 'POST':
+    configs = ConfiguracionFiscal.objects.all().order_by("-anio")
+    if request.method == "POST":
         form = ConfiguracionFiscalForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Configuración fiscal creada.')
-            return redirect('accounts:configuracion_fiscal')
+            messages.success(request, "Configuración fiscal creada.")
+            return redirect("accounts:configuracion_fiscal")
     else:
         form = ConfiguracionFiscalForm()
-    return render(request, 'accounts/configuracion_fiscal.html', {
-        'form': form,
-        'configs': configs,
-    })
+    return render(
+        request,
+        "accounts/configuracion_fiscal.html",
+        {
+            "form": form,
+            "configs": configs,
+        },
+    )

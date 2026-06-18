@@ -5,21 +5,27 @@ from decimal import Decimal
 
 class Provision(models.Model):
     usuario = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
         verbose_name="Usuario",
     )
     concepto = models.CharField(max_length=200, verbose_name="Concepto")
     monto_total = models.DecimalField(
-        max_digits=14, decimal_places=2,
+        max_digits=14,
+        decimal_places=2,
         verbose_name="Monto total estimado (COP)",
     )
     fecha_pago = models.DateField(verbose_name="Fecha de pago")
     ahorro_acumulado = models.DecimalField(
-        max_digits=14, decimal_places=2, default=Decimal('0'),
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0"),
         verbose_name="Ahorro acumulado (COP)",
     )
     ahorro_mensual_disponible = models.DecimalField(
-        max_digits=14, decimal_places=2, default=Decimal('0'),
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0"),
         verbose_name="Ahorro mensual disponible (COP)",
     )
     es_sugerida = models.BooleanField(default=False, verbose_name="Sugerida")
@@ -30,7 +36,7 @@ class Provision(models.Model):
     class Meta:
         verbose_name = "Provisión"
         verbose_name_plural = "Provisiones"
-        ordering = ['fecha_pago']
+        ordering = ["fecha_pago"]
 
     def __str__(self):
         return f"{self.concepto} — ${self.monto_total:,.0f} ({self.fecha_pago})"
@@ -38,11 +44,14 @@ class Provision(models.Model):
 
 class AporteProvision(models.Model):
     provision = models.ForeignKey(
-        Provision, on_delete=models.CASCADE, related_name='aportes',
+        Provision,
+        on_delete=models.CASCADE,
+        related_name="aportes",
         verbose_name="Provisión",
     )
     monto = models.DecimalField(
-        max_digits=14, decimal_places=2,
+        max_digits=14,
+        decimal_places=2,
         verbose_name="Monto (COP)",
     )
     fecha = models.DateField(verbose_name="Fecha")
@@ -51,7 +60,7 @@ class AporteProvision(models.Model):
     class Meta:
         verbose_name = "Aporte a Provisión"
         verbose_name_plural = "Aportes a Provisiones"
-        ordering = ['-fecha']
+        ordering = ["-fecha"]
 
     def __str__(self):
         return f"Aporte ${self.monto:,.0f} → {self.provision.concepto}"
@@ -59,11 +68,14 @@ class AporteProvision(models.Model):
 
 class FondoEmergencia(models.Model):
     usuario = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
         verbose_name="Usuario",
     )
     saldo_actual = models.DecimalField(
-        max_digits=14, decimal_places=2, default=Decimal('0'),
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0"),
         verbose_name="Saldo actual (COP)",
     )
     creado_en = models.DateTimeField(auto_now_add=True)
@@ -79,11 +91,14 @@ class FondoEmergencia(models.Model):
 
 class AporteFondo(models.Model):
     fondo = models.ForeignKey(
-        FondoEmergencia, on_delete=models.CASCADE, related_name='aportes',
+        FondoEmergencia,
+        on_delete=models.CASCADE,
+        related_name="aportes",
         verbose_name="Fondo",
     )
     monto = models.DecimalField(
-        max_digits=14, decimal_places=2,
+        max_digits=14,
+        decimal_places=2,
         verbose_name="Monto (COP)",
     )
     fecha = models.DateField(verbose_name="Fecha")
@@ -94,7 +109,7 @@ class AporteFondo(models.Model):
     class Meta:
         verbose_name = "Aporte al Fondo"
         verbose_name_plural = "Aportes al Fondo"
-        ordering = ['-fecha']
+        ordering = ["-fecha"]
 
     def __str__(self):
         return f"Aporte ${self.monto:,.0f} ({self.fecha})"

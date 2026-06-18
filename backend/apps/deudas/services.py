@@ -2,7 +2,6 @@ from decimal import Decimal, ROUND_HALF_UP
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
-
 Q = lambda x: x.quantize(Decimal("1"), rounding=ROUND_HALF_UP)
 
 
@@ -13,10 +12,10 @@ def calcular_tasa_mensual(tasa_ea):
     Fórmula: i_mensual = (1 + EA)^(1/12) - 1
     """
     if tasa_ea <= 0:
-        return Decimal('0')
-    uno = Decimal('1')
-    i_mensual = (uno + tasa_ea) ** (uno / Decimal('12')) - uno
-    return i_mensual.quantize(Decimal('0.000001'), rounding=ROUND_HALF_UP)
+        return Decimal("0")
+    uno = Decimal("1")
+    i_mensual = (uno + tasa_ea) ** (uno / Decimal("12")) - uno
+    return i_mensual.quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
 
 
 def calcular_cuota_mensual(capital, tasa_ea, plazo_meses):
@@ -42,7 +41,7 @@ def calcular_cuota_mensual(capital, tasa_ea, plazo_meses):
     if i <= 0:
         return Q(capital / Decimal(str(plazo_meses)))
 
-    uno = Decimal('1')
+    uno = Decimal("1")
     denominador = uno - (uno + i) ** (-Decimal(str(plazo_meses)))
     cuota = Q(capital * i / denominador)
     return cuota
@@ -76,19 +75,21 @@ def generar_tabla_amortizacion(credito):
             capital_amortizado = saldo
             cuota = Q(saldo + interes)
         saldo -= capital_amortizado
-        if saldo < Decimal('0'):
-            saldo = Decimal('0')
+        if saldo < Decimal("0"):
+            saldo = Decimal("0")
 
         fecha_pago = fecha_base + relativedelta(months=n)
 
-        tabla.append({
-            'numero': n,
-            'fecha_pago': fecha_pago,
-            'cuota_total': cuota,
-            'interes': interes,
-            'capital_amortizado': capital_amortizado,
-            'saldo_capital': saldo,
-        })
+        tabla.append(
+            {
+                "numero": n,
+                "fecha_pago": fecha_pago,
+                "cuota_total": cuota,
+                "interes": interes,
+                "capital_amortizado": capital_amortizado,
+                "saldo_capital": saldo,
+            }
+        )
 
     return tabla
 
@@ -107,6 +108,7 @@ def calcular_interes_total(capital, tasa_ea, plazo_meses):
 # SERVICIOS TARJETAS DE CRÉDITO
 # ============================================================
 
+
 def calcular_cuota_minima(saldo_actual, cuota_minima_pct):
     """
     Calcula la cuota mínima a pagar en una tarjeta de crédito.
@@ -122,7 +124,7 @@ def calcular_cuota_minima(saldo_actual, cuota_minima_pct):
         cuota mínima en COP (Decimal)
     """
     if saldo_actual <= 0:
-        return Decimal('0')
+        return Decimal("0")
     return Q(saldo_actual * cuota_minima_pct)
 
 
@@ -140,7 +142,7 @@ def calcular_intereses_tc(saldo_actual, tasa_mensual):
         intereses del mes en COP (Decimal)
     """
     if saldo_actual <= 0 or tasa_mensual <= 0:
-        return Decimal('0')
+        return Decimal("0")
     return Q(saldo_actual * tasa_mensual)
 
 
@@ -160,11 +162,11 @@ def obtener_semaforo_uso(porcentaje_uso):
         dict con 'nivel' (verde/amarillo/rojo) y 'color' (hex)
     """
     if porcentaje_uso < 60:
-        return {'nivel': 'verde', 'color': '#22c55e'}
+        return {"nivel": "verde", "color": "#22c55e"}
     elif porcentaje_uso <= 80:
-        return {'nivel': 'amarillo', 'color': '#eab308'}
+        return {"nivel": "amarillo", "color": "#eab308"}
     else:
-        return {'nivel': 'rojo', 'color': '#ef4444'}
+        return {"nivel": "rojo", "color": "#ef4444"}
 
 
 def calcular_disponible(limite, saldo_actual):
@@ -181,7 +183,7 @@ def calcular_disponible(limite, saldo_actual):
         disponible en COP (Decimal)
     """
     disponible = limite - saldo_actual
-    return disponible if disponible > 0 else Decimal('0')
+    return disponible if disponible > 0 else Decimal("0")
 
 
 def calcular_dias_proximo_corte(fecha_corte, referencia=None):
@@ -215,7 +217,9 @@ def calcular_dias_proximo_corte(fecha_corte, referencia=None):
             mes_corte += 1
 
     try:
-        prox_corte = hoy.replace(year=anio_corte, month=mes_corte, day=min(fecha_corte, 28))
+        prox_corte = hoy.replace(
+            year=anio_corte, month=mes_corte, day=min(fecha_corte, 28)
+        )
     except (ValueError, OverflowError):
         prox_corte = hoy.replace(year=anio_corte, month=mes_corte, day=28)
 
@@ -234,5 +238,5 @@ def calcular_pago_diferido(monto, numero_cuotas):
         monto por cuota en COP (Decimal)
     """
     if numero_cuotas <= 0:
-        return Decimal('0')
+        return Decimal("0")
     return Q(monto / Decimal(str(numero_cuotas)))

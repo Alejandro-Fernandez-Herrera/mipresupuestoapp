@@ -10,36 +10,37 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-gray-100">
-    <nav class="bg-blue-600 text-white shadow-lg" x-data="{ open: false }">
+    <nav class="bg-blue-600 text-white shadow-lg overflow-hidden" x-data="{ open: false }">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
-                    <a href="{% url 'dashboard' %}" class="font-bold text-lg">💰 Finanzas Hogar</a>
+                    <a href="{% url 'dashboard' %}" class="font-bold text-base md:text-lg truncate">💰 Finanzas Hogar</a>
                 </div>
-                <div class="hidden md:flex items-center space-x-4">
+                <div class="hidden lg:flex items-center space-x-1 xl:space-x-2">
                     {% if user.is_authenticated %}
-                        <a href="{% url 'dashboard' %}" class="px-3 py-2 hover:bg-blue-500 rounded">Dashboard</a>
-                        <a href="{% url 'ingresos:lista' %}" class="px-3 py-2 hover:bg-blue-500 rounded">Ingresos</a>
-                        <a href="{% url 'gastos:lista' %}" class="px-3 py-2 hover:bg-blue-500 rounded">Gastos</a>
-                        <a href="{% url 'deudas:lista' %}" class="px-3 py-2 hover:bg-blue-500 rounded">Créditos</a>
-                        <a href="{% url 'deudas:lista_tarjetas' %}" class="px-3 py-2 hover:bg-blue-500 rounded">Tarjetas</a>
-                        <a href="{% url 'provisiones:lista' %}" class="px-3 py-2 hover:bg-blue-500 rounded">Provisiones</a>
-                        <a href="{% url 'provisiones:fondo' %}" class="px-3 py-2 hover:bg-blue-500 rounded">Fondo</a>
-                        <a href="{% url 'proyecciones:ver' %}" class="px-3 py-2 hover:bg-blue-500 rounded">Proyecciones</a>
-                        <a href="{% url 'indicadores:historial' %}" class="px-3 py-2 hover:bg-blue-500 rounded">Indicadores</a>
-                        <a href="{% url 'accounts:perfil' %}" class="px-3 py-2 hover:bg-blue-500 rounded">{{ user.nombre_completo }}</a>
-                        <a href="{% url 'accounts:logout' %}" class="px-3 py-2 hover:bg-blue-500 rounded">Salir</a>
+                        <a href="{% url 'dashboard' %}" class="px-2 xl:px-3 py-2 hover:bg-blue-500 rounded text-sm xl:text-base whitespace-nowrap">Dashboard</a>
+                        <a href="{% url 'ingresos:lista' %}" class="px-2 xl:px-3 py-2 hover:bg-blue-500 rounded text-sm xl:text-base whitespace-nowrap">Ingresos</a>
+                        <a href="{% url 'gastos:lista' %}" class="px-2 xl:px-3 py-2 hover:bg-blue-500 rounded text-sm xl:text-base whitespace-nowrap">Gastos</a>
+                        <a href="{% url 'deudas:lista' %}" class="px-2 xl:px-3 py-2 hover:bg-blue-500 rounded text-sm xl:text-base whitespace-nowrap">Créditos</a>
+                        <a href="{% url 'deudas:lista_tarjetas' %}" class="px-2 xl:px-3 py-2 hover:bg-blue-500 rounded text-sm xl:text-base whitespace-nowrap">Tarjetas</a>
+                        <a href="{% url 'provisiones:lista' %}" class="px-2 xl:px-3 py-2 hover:bg-blue-500 rounded text-sm xl:text-base whitespace-nowrap">Provisiones</a>
+                        <a href="{% url 'provisiones:fondo' %}" class="px-2 xl:px-3 py-2 hover:bg-blue-500 rounded text-sm xl:text-base whitespace-nowrap">Fondo</a>
+                        <a href="{% url 'proyecciones:ver' %}" class="px-2 xl:px-3 py-2 hover:bg-blue-500 rounded text-sm xl:text-base whitespace-nowrap">Proyecciones</a>
+                        <a href="{% url 'reportes:reporte_pdf' %}?mes={{ mes|default:1 }}&anio={{ anio|default:2026 }}" class="px-2 xl:px-3 py-2 hover:bg-blue-500 rounded text-sm xl:text-base whitespace-nowrap">Reportes</a>
+                        <a href="{% url 'indicadores:historial' %}" class="px-2 xl:px-3 py-2 hover:bg-blue-500 rounded text-sm xl:text-base whitespace-nowrap">Indicadores</a>
+                        <a href="{% url 'accounts:perfil' %}" class="px-2 xl:px-3 py-2 hover:bg-blue-500 rounded text-sm xl:text-base whitespace-nowrap">{{ user.nombre_completo|truncatechars:12 }}</a>
+                        <a href="{% url 'accounts:logout' %}" class="px-2 xl:px-3 py-2 hover:bg-blue-500 rounded text-sm xl:text-base whitespace-nowrap">Salir</a>
                     {% else %}
-                        <a href="{% url 'accounts:login' %}" class="px-3 py-2 hover:bg-blue-500 rounded">Ingresar</a>
-                        <a href="{% url 'accounts:registro' %}" class="px-3 py-2 bg-green-500 hover:bg-green-600 rounded">Registrarse</a>
+                        <a href="{% url 'accounts:login' %}" class="px-2 xl:px-3 py-2 hover:bg-blue-500 rounded text-sm xl:text-base whitespace-nowrap">Ingresar</a>
+                        <a href="{% url 'accounts:registro' %}" class="px-2 xl:px-3 py-2 bg-green-500 hover:bg-green-600 rounded text-sm xl:text-base whitespace-nowrap">Registrarse</a>
                     {% endif %}
                 </div>
-                <div class="md:hidden flex items-center">
-                    <button @click="open = !open" class="p-2">☰</button>
+                <div class="lg:hidden flex items-center">
+                    <button @click="open = !open" class="p-2 hover:bg-blue-500 rounded">☰</button>
                 </div>
             </div>
         </div>
-        <div x-show="open" class="md:hidden">
+        <div x-show="open" class="lg:hidden">
             <div class="px-2 pt-2 pb-3 space-y-1">
                 {% if user.is_authenticated %}
                     <a href="{% url 'dashboard' %}" class="block px-3 py-2 hover:bg-blue-500 rounded">Dashboard</a>
@@ -50,6 +51,7 @@
                     <a href="{% url 'provisiones:lista' %}" class="block px-3 py-2 hover:bg-blue-500 rounded">Provisiones</a>
                     <a href="{% url 'provisiones:fondo' %}" class="block px-3 py-2 hover:bg-blue-500 rounded">Fondo</a>
                     <a href="{% url 'proyecciones:ver' %}" class="block px-3 py-2 hover:bg-blue-500 rounded">Proyecciones</a>
+                    <a href="{% url 'reportes:reporte_pdf' %}?mes={{ mes|default:1 }}&anio={{ anio|default:2026 }}" class="block px-3 py-2 hover:bg-blue-500 rounded">Reportes</a>
                     <a href="{% url 'indicadores:historial' %}" class="block px-3 py-2 hover:bg-blue-500 rounded">Indicadores</a>
                     <a href="{% url 'accounts:perfil' %}" class="block px-3 py-2 hover:bg-blue-500 rounded">Perfil</a>
                     <a href="{% url 'accounts:logout' %}" class="block px-3 py-2 hover:bg-blue-500 rounded">Salir</a>
