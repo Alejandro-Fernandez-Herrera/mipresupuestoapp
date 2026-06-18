@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ titulo }} — Finanzas Hogar{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">{{ titulo }}</h1>
+
+    <div x-data="provisionForm()" class="bg-white rounded-lg shadow p-6">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            {% for field in form %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="border-t pt-4 mt-4" x-show="preview.show">
+                <h3 class="font-semibold mb-2">Proyección</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span>Meses hasta vencimiento</span>
+                        <span class="font-medium" x-text="preview.meses"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Ahorro mensual recomendado</span>
+                        <span class="font-medium text-blue-600" x-text="preview.recomendado"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between pt-4">
+                <a href="{% url 'provisiones:lista' %}" class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50">Cancelar</a>
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function provisionForm() {
+    return {
+        preview: { show: false, meses: '', recomendado: '' },
+        init() {
+            const total = document.querySelector('[name="monto_total"]');
+            const acumulado = document.querySelector('[name="ahorro_acumulado"]');
+            const disponible = document.querySelector('[name="ahorro_mensual_disponible"]');
+            const fecha = document.querySelector('[name="fecha_pago"]');
+            [total, acumulado, disponible, fecha].forEach(el => {
+                if (el) el.addEventListener('input', () => this.calcular());
+                if (el) el.addEventListener('change', () => this.calcular());
+            });
+        },
+        calcular() {
+            const total = parseFloat(document.querySelector('[name="monto_total"]')?.value || 0);
+            const acumulado = parseFloat(document.querySelector('[name="ahorro_acumulado"]')?.value || 0);
+            const disponible = parseFloat(document.querySelector('[name="ahorro_mensual_disponible"]')?.value || 0);
+            const fechaStr = document.querySelector('[name="fecha_pago"]')?.value;
+            if (total > 0 && fechaStr) {
+                const fechaPago = new Date(fechaStr);
+                const hoy = new Date();
+                let meses = (fechaPago.getFullYear() - hoy.getFullYear()) * 12 + (fechaPago.getMonth() - hoy.getMonth());
+                if (fechaPago.getDate() > hoy.getDate()) meses++;
+                if (meses < 0) meses = 0;
+                const restante = total - acumulado;
+                const rec = meses > 0 ? Math.round(restante / meses) : 0;
+                this.preview = {
+                    show: true,
+                    meses: meses + ' meses',
+                    recomendado: '$' + (rec || 0).toLocaleString('es-CO'),
+                };
+            } else {
+                this.preview = { show: false, meses: '', recomendado: '' };
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

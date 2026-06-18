@@ -233,13 +233,13 @@ CASOS_PROVISION = [
             "monto_total":                  Decimal("250000"),
             "ahorro_acumulado":             Decimal("50000"),
             "meses_restantes":              4,
-            "ahorro_mensual_disponible":    Decimal("60000"),
+            "ahorro_mensual_disponible":    Decimal("47500"),
         },
         "esperado": {
             "ahorro_mensual_recomendado":   Decimal("50000"),   # (250k−50k)/4
-            "ahorro_maximo_alcanzable":     Decimal("240000"),  # 60k × 4
+            "ahorro_maximo_alcanzable":     Decimal("190000"),  # 47.5k × 4
             "alcanza_meta":                 False,
-            "deficit":                      Decimal("10000"),   # 250k − (50k+240k)
+            "deficit":                      Decimal("10000"),   # 250k − (50k+190k)
             "porcentaje_progreso":          Decimal("20.00"),   # 50k/250k × 100
         },
     },

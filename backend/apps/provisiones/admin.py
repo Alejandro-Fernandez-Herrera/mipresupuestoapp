@@ -1,5 +1,18 @@
 from django.contrib import admin
-from .models import FondoEmergencia, AporteFondo
+from .models import FondoEmergencia, AporteFondo, Provision, AporteProvision
+
+
+@admin.register(Provision)
+class ProvisionAdmin(admin.ModelAdmin):
+    list_display = ['concepto', 'usuario', 'monto_total', 'fecha_pago', 'ahorro_acumulado', 'activa']
+    list_filter = ['activa', 'es_sugerida']
+    search_fields = ['concepto']
+
+
+@admin.register(AporteProvision)
+class AporteProvisionAdmin(admin.ModelAdmin):
+    list_display = ['provision', 'monto', 'fecha']
+    list_filter = ['fecha']
 
 
 @admin.register(FondoEmergencia)
