@@ -3,13 +3,21 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from decimal import Decimal
 from datetime import date
-from .models import FondoEmergencia, AporteFondo
+from .models import FondoEmergencia, AporteFondo, Provision, AporteProvision
+from .forms import ProvisionForm, AporteProvisionForm
 from .services import (
     calcular_gasto_esencial_mensual,
     calcular_meta_niveles,
     calcular_cobertura_meses,
     calcular_meses_para_meta,
     obtener_aportes_mensuales,
+    calcular_meses_restantes,
+    calcular_ahorro_mensual_recomendado,
+    calcular_ahorro_maximo_alcanzable,
+    calcular_progreso,
+    evaluar_alcanzabilidad,
+    chequear_recordatorio,
+    crear_provisiones_sugeridas,
 )
 
 
@@ -120,3 +128,143 @@ def ajustar_saldo(request):
         return redirect('provisiones:fondo')
 
     return redirect('provisiones:fondo')
+
+
+# ============================================================
+# VISTAS PROVISIONES (RF-070 a RF-078)
+# ============================================================
+
+@login_required
+def listar_provisiones(request):
+    crear_provisiones_sugeridas(request.user)
+
+    provisiones = Provision.objects.filter(usuario=request.user, activa=True).order_by('fecha_pago')
+
+    resultados = []
+    total_faltante = Decimal('0')
+
+    for p in provisiones:
+        meses_rest = calcular_meses_restantes(p.fecha_pago)
+        rec = calcular_ahorro_mensual_recomendado(p.monto_total, p.ahorro_acumulado, meses_rest)
+        maximo = calcular_ahorro_maximo_alcanzable(p.ahorro_mensual_disponible, meses_rest)
+        progreso = calcular_progreso(p.ahorro_acumulado, p.monto_total)
+        alcanza, deficit = evaluar_alcanzabilidad(p.ahorro_acumulado, maximo, p.monto_total)
+        alerta = chequear_recordatorio(p.fecha_pago, progreso)
+
+        restante = p.monto_total - p.ahorro_acumulado
+        if restante > 0:
+            total_faltante += restante
+
+        resultados.append({
+            'provision': p,
+            'meses_restantes': meses_rest,
+            'ahorro_recomendado': rec,
+            'ahorro_maximo': maximo,
+            'progreso': int(progreso),
+            'alcanza': alcanza,
+            'deficit': deficit,
+            'alerta': alerta,
+        })
+
+    return render(request, 'provisiones/lista.html', {
+        'resultados': resultados,
+        'total_faltante': total_faltante,
+    })
+
+
+@login_required
+def registrar_provision(request):
+    if request.method == 'POST':
+        form = ProvisionForm(request.POST)
+        if form.is_valid():
+            provision = form.save(commit=False)
+            provision.usuario = request.user
+            provision.save()
+            messages.success(request, f'Provisión "{provision.concepto}" creada.')
+            return redirect('provisiones:lista')
+    else:
+        form = ProvisionForm(initial={'fecha_pago': date.today()})
+
+    return render(request, 'provisiones/form.html', {
+        'form': form,
+        'titulo': 'Nueva Provisión',
+    })
+
+
+@login_required
+def detalle_provision(request, provision_id):
+    provision = get_object_or_404(Provision, id=provision_id, usuario=request.user)
+    aportes = provision.aportes.all().order_by('-fecha')
+
+    meses_rest = calcular_meses_restantes(provision.fecha_pago)
+    rec = calcular_ahorro_mensual_recomendado(provision.monto_total, provision.ahorro_acumulado, meses_rest)
+    maximo = calcular_ahorro_maximo_alcanzable(provision.ahorro_mensual_disponible, meses_rest)
+    progreso = calcular_progreso(provision.ahorro_acumulado, provision.monto_total)
+    alcanza, deficit = evaluar_alcanzabilidad(provision.ahorro_acumulado, maximo, provision.monto_total)
+    alerta = chequear_recordatorio(provision.fecha_pago, progreso)
+
+    aporte_form = AporteProvisionForm()
+
+    faltante = max(provision.monto_total - provision.ahorro_acumulado, Decimal('0'))
+
+    return render(request, 'provisiones/detalle.html', {
+        'provision': provision,
+        'aportes': aportes,
+        'meses_restantes': meses_rest,
+        'ahorro_recomendado': rec,
+        'ahorro_maximo': maximo,
+        'progreso': int(progreso),
+        'alcanza': alcanza,
+        'deficit': deficit,
+        'alerta': alerta,
+        'faltante': faltante,
+        'aporte_form': aporte_form,
+    })
+
+
+@login_required
+def editar_provision(request, provision_id):
+    provision = get_object_or_404(Provision, id=provision_id, usuario=request.user)
+
+    if request.method == 'POST':
+        form = ProvisionForm(request.POST, instance=provision)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Provisión actualizada.')
+            return redirect('provisiones:detalle', provision_id=provision.id)
+    else:
+        form = ProvisionForm(instance=provision)
+
+    return render(request, 'provisiones/form.html', {
+        'form': form,
+        'titulo': 'Editar Provisión',
+    })
+
+
+@login_required
+def eliminar_provision(request, provision_id):
+    provision = get_object_or_404(Provision, id=provision_id, usuario=request.user)
+    provision.delete()
+    messages.success(request, 'Provisión eliminada.')
+    return redirect('provisiones:lista')
+
+
+@login_required
+def registrar_aporte_provision(request, provision_id):
+    provision = get_object_or_404(Provision, id=provision_id, usuario=request.user)
+
+    if request.method == 'POST':
+        form = AporteProvisionForm(request.POST)
+        if form.is_valid():
+            monto = form.cleaned_data['monto']
+            fecha = form.cleaned_data['fecha']
+            AporteProvision.objects.create(
+                provision=provision,
+                monto=monto,
+                fecha=fecha,
+            )
+            provision.ahorro_acumulado += monto
+            provision.save()
+            messages.success(request, f'Aporte de ${monto:,.0f} registrado.')
+            return redirect('provisiones:detalle', provision_id=provision.id)
+    return redirect('provisiones:detalle', provision_id=provision.id)

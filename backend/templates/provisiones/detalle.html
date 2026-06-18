@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ provision.concepto }} — Finanzas Hogar{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold">{{ provision.concepto }}</h1>
+        <div class="flex space-x-2">
+            <a href="{% url 'provisiones:editar' provision.id %}" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 text-sm">Editar</a>
+            <a href="{% url 'provisiones:lista' %}" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 text-sm">Volver</a>
+        </div>
+    </div>
+
+    {% if alerta %}
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 px-4 py-3 rounded">
+        <p class="text-sm font-medium">⏰ Esta provisión vence pronto. Progreso actual: {{ progreso }}%.</p>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-sm">Meta Total</p>
+            <p class="text-2xl font-bold">${{ provision.monto_total|floatformat:0|intcomma }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-sm">Acumulado</p>
+            <p class="text-2xl font-bold text-green-600">${{ provision.ahorro_acumulado|floatformat:0|intcomma }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-sm">Faltante</p>
+            <p class="text-2xl font-bold text-red-600">${{ faltante|floatformat:0|intcomma }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-sm">Vencimiento</p>
+            <p class="text-2xl font-bold">{{ provision.fecha_pago|date:"d/m/Y" }}</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex justify-between mb-2">
+            <h2 class="font-semibold">Progreso</h2>
+            <span class="text-sm text-gray-500">{{ progreso }}% completado</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-4">
+            <div class="h-4 rounded-full {% if progreso >= 100 %}bg-green-500{% elif progreso >= 50 %}bg-blue-500{% else %}bg-yellow-500{% endif %}"
+                 style="width: {{ progreso }}%"></div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-xs">Meses Restantes</p>
+            <p class="text-xl font-bold">{{ meses_restantes }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-xs">Ahorro Mensual Recomendado</p>
+            <p class="text-xl font-bold text-blue-600">${{ ahorro_recomendado|floatformat:0|intcomma }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <p class="text-gray-500 text-xs">Ahorro Mensual Disponible</p>
+            <p class="text-xl font-bold">${{ provision.ahorro_mensual_disponible|floatformat:0|intcomma }}</p>
+        </div>
+    </div>
+
+    {% if not alcanza %}
+    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded">
+        <p class="text-sm font-medium">
+            ⚠️ Meta no alcanzable al ritmo actual. Déficit proyectado: <strong>${{ deficit|floatformat:0|intcomma }}</strong>.
+            Aumenta el ahorro mensual disponible o ajusta la fecha de pago.
+        </p>
+    </div>
+    {% endif %}
+
+    <div class="bg-white rounded-lg shadow p-4">
+        <h2 class="font-semibold mb-4">Registrar Aporte</h2>
+        <form method="post" action="{% url 'provisiones:aporte_provision' provision.id %}" class="flex gap-4 items-end">
+            {% csrf_token %}
+            <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700">Monto</label>
+                <input type="number" name="monto" step="1" min="1" required
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                       placeholder="Ej: 50000">
+            </div>
+            <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700">Fecha</label>
+                <input type="date" name="fecha" required
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Aportar</button>
+        </form>
+    </div>
+
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-4 py-3 bg-gray-50 border-b">
+            <h2 class="font-semibold">Historial de Aportes</h2>
+        </div>
+        {% if aportes %}
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-2 text-left">Fecha</th>
+                    <th class="px-4 py-2 text-right">Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in aportes %}
+                <tr class="border-t hover:bg-gray-50">
+                    <td class="px-4 py-2">{{ a.fecha|date:"d/m/Y" }}</td>
+                    <td class="px-4 py-2 text-right font-medium text-green-600">+${{ a.monto|floatformat:0|intcomma }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-6 text-center text-gray-500">
+            No hay aportes registrados.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
