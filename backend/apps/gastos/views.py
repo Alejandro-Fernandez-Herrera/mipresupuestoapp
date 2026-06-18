@@ -66,7 +66,7 @@ def registrar_gasto(request):
             gasto.usuario = request.user
             gasto.save()
             messages.success(request, 'Gasto registrado correctamente.')
-            return redirect(f'/gastos/?mes={gasto.mes}&anio={gasto.anio}')
+            return redirect(f'/?mes={gasto.mes}&anio={gasto.anio}')
     else:
         form = GastoForm(usuario=request.user, initial={
             'mes': mes,

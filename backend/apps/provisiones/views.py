@@ -104,7 +104,7 @@ def registrar_aporte(request):
         fondo.save()
 
         messages.success(request, f'Aporte de ${monto:,.0f} registrado correctamente.')
-        return redirect('provisiones:fondo')
+        return redirect('dashboard')
 
     return redirect('provisiones:fondo')
 
@@ -125,7 +125,7 @@ def ajustar_saldo(request):
         fondo.saldo_actual = nuevo_saldo
         fondo.save()
         messages.success(request, 'Saldo del fondo actualizado.')
-        return redirect('provisiones:fondo')
+        return redirect('dashboard')
 
     return redirect('provisiones:fondo')
 
@@ -181,7 +181,7 @@ def registrar_provision(request):
             provision.usuario = request.user
             provision.save()
             messages.success(request, f'Provisión "{provision.concepto}" creada.')
-            return redirect('provisiones:lista')
+            return redirect('dashboard')
     else:
         form = ProvisionForm(initial={'fecha_pago': date.today()})
 
@@ -266,5 +266,5 @@ def registrar_aporte_provision(request, provision_id):
             provision.ahorro_acumulado += monto
             provision.save()
             messages.success(request, f'Aporte de ${monto:,.0f} registrado.')
-            return redirect('provisiones:detalle', provision_id=provision.id)
+            return redirect('dashboard')
     return redirect('provisiones:detalle', provision_id=provision.id)

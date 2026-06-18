@@ -11,6 +11,8 @@ from .services import (
     calcular_cesantias,
     calcular_intereses_cesantias,
     calcular_vacaciones,
+    calcular_alerta_prestacion,
+    verificar_alertas_prestaciones,
 )
 from datetime import date
 
@@ -48,22 +50,23 @@ def listar_ingresos(request):
         config = request.user.get_config_fiscal()
         if config:
             meses_transcurridos = max(1, mes)
+            anio_base = anio
             prestaciones_data = {
                 'prima_servicios': {
                     'monto': calcular_prima(nomina_activa.salario_bruto, meses_transcurridos, config),
-                    'fecha_pago_1': date(anio, 6, 30),
-                    'fecha_pago_2': date(anio, 12, 20),
+                    'fecha_pago_1': date(anio_base, 6, 30),
+                    'fecha_pago_2': date(anio_base, 12, 20),
                 },
                 'cesantias': {
                     'monto': calcular_cesantias(nomina_activa.salario_bruto, meses_transcurridos, config),
-                    'fecha_pago': date(anio + 1, 2, 14),
+                    'fecha_pago': date(anio_base + 1, 2, 14),
                 },
                 'intereses_cesantias': {
                     'monto': calcular_intereses_cesantias(
                         calcular_cesantias(nomina_activa.salario_bruto, meses_transcurridos, config),
                         meses_transcurridos, config
                     ),
-                    'fecha_pago': date(anio + 1, 1, 31),
+                    'fecha_pago': date(anio_base + 1, 1, 31),
                 },
             }
 
@@ -85,6 +88,9 @@ def listar_ingresos(request):
 
             prestaciones = prestaciones_list
 
+    # Alertas de prestaciones próximas
+    alertas_prestaciones = verificar_alertas_prestaciones(request.user)
+
     return render(request, 'ingresos/lista.html', {
         'mes': mes,
         'anio': anio,
@@ -95,6 +101,7 @@ def listar_ingresos(request):
         'total_otros': total_otros,
         'total_ingresos': total_ingresos,
         'prestaciones': prestaciones,
+        'alertas_prestaciones': alertas_prestaciones,
     })
 
 
@@ -142,7 +149,7 @@ def registrar_nomina(request):
             nomina.save()
 
             messages.success(request, 'Nómina registrada correctamente.')
-            return redirect(f'/ingresos/?mes={nomina.mes}&anio={nomina.anio}')
+            return redirect(f'/?mes={nomina.mes}&anio={nomina.anio}')
     else:
         form = RegistroNominaForm(initial={'mes': mes, 'anio': anio})
 
@@ -221,7 +228,7 @@ def registrar_otro_ingreso(request):
             ingreso.save()
 
             messages.success(request, 'Ingreso registrado correctamente.')
-            return redirect(f'/ingresos/?mes={ingreso.mes}&anio={ingreso.anio}')
+            return redirect(f'/?mes={ingreso.mes}&anio={ingreso.anio}')
     else:
         form = OtroIngresoForm(initial={'mes': mes, 'anio': anio})
 
@@ -269,7 +276,37 @@ def prestaciones_proyectadas(request):
         usuario=request.user, anio=anio
     ).order_by('fecha_pago_esperada')
 
+    # Calcular alertas para cada prestación
+    alertas = {}
+    for p in prestaciones_bd:
+        alertas[p.id] = calcular_alerta_prestacion(p.fecha_pago_esperada)
+
     return render(request, 'ingresos/prestaciones.html', {
         'anio': anio,
         'prestaciones': prestaciones_bd,
+        'alertas': alertas,
     })
+
+
+@login_required
+def marcar_prestacion_pagada(request, pk):
+    """
+    Marca una prestación social como pagada y registra la fecha real de pago.
+    """
+    prestacion = get_object_or_404(
+        PrestacionSocial, id=pk, usuario=request.user
+    )
+
+    if request.method == 'POST':
+        prestacion.pagada = True
+        prestacion.fecha_pago_real = date.today()
+        prestacion.save()
+        messages.success(
+            request,
+            f'{prestacion.get_tipo_display()} marcada como pagada '
+            f'(${prestacion.monto_proyectado:,.0f}).'
+        )
+    else:
+        messages.warning(request, 'Usa el formulario para confirmar el pago.')
+
+    return redirect('ingresos:prestaciones')

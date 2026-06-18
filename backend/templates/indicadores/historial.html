@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Indicadores de Salud Financiera — Finanzas Hogar{% endblock %}
+
+{% block content %}
+<div x-data="{ mes: {{ mes }}, anio: {{ anio }} }" x-init="$watch('mes', val => window.location.href = '?mes=' + val + '&anio=' + anio); $watch('anio', val => window.location.href = '?mes=' + mes + '&anio=' + val)" class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold">Indicadores de Salud Financiera</h1>
+        <div class="flex items-center space-x-2">
+            <select x-model="mes" class="border border-gray-300 rounded px-3 py-1 text-sm">
+                <option value="1">Enero</option><option value="2">Febrero</option>
+                <option value="3">Marzo</option><option value="4">Abril</option>
+                <option value="5">Mayo</option><option value="6">Junio</option>
+                <option value="7">Julio</option><option value="8">Agosto</option>
+                <option value="9">Septiembre</option><option value="10">Octubre</option>
+                <option value="11">Noviembre</option><option value="12">Diciembre</option>
+            </select>
+            <input type="number" x-model="anio" class="border border-gray-300 rounded px-3 py-1 text-sm w-20">
+            <button @click="window.location.href = '?mes=' + mes + '&anio=' + anio" class="bg-gray-200 text-gray-600 px-2 py-1 rounded text-sm hover:bg-gray-300">↻</button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="font-semibold">Ratio de Endeudamiento</h2>
+                <span class="text-lg">{{ tendencias.ratio_endeudamiento }}</span>
+            </div>
+            <p class="text-3xl font-bold
+                {% if indicadores.semaforo_endeudamiento == 'verde' %}text-green-600
+                {% elif indicadores.semaforo_endeudamiento == 'amarillo' %}text-yellow-600
+                {% else %}text-red-600{% endif %}">
+                {{ indicadores.ratio_endeudamiento|floatformat:1 }}%
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+                Cuotas créditos: ${{ indicadores.cuotas_creditos_mes|floatformat:0|intcomma }} |
+                Mínimos TC: ${{ indicadores.minimos_tarjetas_mes|floatformat:0|intcomma }}
+            </p>
+            <div class="mt-2 flex space-x-1">
+                <span class="w-1/3 h-2 rounded-l {% if indicadores.semaforo_endeudamiento == 'verde' %}bg-green-500{% else %}bg-gray-200{% endif %}"></span>
+                <span class="w-1/3 h-2 {% if indicadores.semaforo_endeudamiento == 'amarillo' %}bg-yellow-500{% else %}bg-gray-200{% endif %}"></span>
+                <span class="w-1/3 h-2 rounded-r {% if indicadores.semaforo_endeudamiento == 'rojo' %}bg-red-500{% else %}bg-gray-200{% endif %}"></span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">Verde &lt;30% · Amarillo 30-40% · Rojo &gt;40%</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="font-semibold">Tasa de Ahorro</h2>
+                <span class="text-lg">{{ tendencias.tasa_ahorro }}</span>
+            </div>
+            <p class="text-3xl font-bold
+                {% if indicadores.semaforo_ahorro == 'verde' %}text-green-600
+                {% elif indicadores.semaforo_ahorro == 'amarillo' %}text-yellow-600
+                {% else %}text-red-600{% endif %}">
+                {{ indicadores.tasa_ahorro|floatformat:1 }}%
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+                Ahorro: ${{ indicadores.ahorro_neto|floatformat:0|intcomma }} |
+                Ingreso: ${{ indicadores.ingreso_neto|floatformat:0|intcomma }}
+            </p>
+            <div class="mt-2 flex space-x-1">
+                <span class="w-1/3 h-2 rounded-l {% if indicadores.semaforo_ahorro == 'rojo' %}bg-red-500{% else %}bg-gray-200{% endif %}"></span>
+                <span class="w-1/3 h-2 {% if indicadores.semaforo_ahorro == 'amarillo' %}bg-yellow-500{% else %}bg-gray-200{% endif %}"></span>
+                <span class="w-1/3 h-2 rounded-r {% if indicadores.semaforo_ahorro == 'verde' %}bg-green-500{% else %}bg-gray-200{% endif %}"></span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">Verde ≥20% · Amarillo 10-20% · Rojo &lt;10%</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="font-semibold">Cobertura Fondo Emergencia</h2>
+                <span class="text-lg">{{ tendencias.cobertura_emergencia }}</span>
+            </div>
+            <p class="text-3xl font-bold
+                {% if indicadores.semaforo_emergencia == 'verde' %}text-green-600
+                {% elif indicadores.semaforo_emergencia == 'amarillo' %}text-yellow-600
+                {% else %}text-red-600{% endif %}">
+                {{ indicadores.cobertura_emergencia|floatformat:1 }} meses
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+                Fondo: ${{ indicadores.saldo_fondo|floatformat:0|intcomma }} |
+                Gasto esencial: ${{ indicadores.gasto_esencial|floatformat:0|intcomma }}
+            </p>
+            <div class="mt-2 flex space-x-1">
+                <span class="w-1/3 h-2 rounded-l {% if indicadores.semaforo_emergencia == 'rojo' %}bg-red-500{% else %}bg-gray-200{% endif %}"></span>
+                <span class="w-1/3 h-2 {% if indicadores.semaforo_emergencia == 'amarillo' %}bg-yellow-500{% else %}bg-gray-200{% endif %}"></span>
+                <span class="w-1/3 h-2 rounded-r {% if indicadores.semaforo_emergencia == 'verde' %}bg-green-500{% else %}bg-gray-200{% endif %}"></span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">Verde ≥3m · Amarillo 1-3m · Rojo &lt;1m</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="font-semibold">Presión de Gastos Fijos</h2>
+                <span class="text-lg">{{ tendencias.presion_gastos_fijos }}</span>
+            </div>
+            <p class="text-3xl font-bold
+                {% if indicadores.presion_gastos_fijos < 50 %}text-green-600
+                {% elif indicadores.presion_gastos_fijos < 70 %}text-yellow-600
+                {% else %}text-red-600{% endif %}">
+                {{ indicadores.presion_gastos_fijos|floatformat:1 }}%
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+                Gastos fijos: ${{ indicadores.gastos_fijos|floatformat:0|intcomma }} |
+                Ingreso: ${{ indicadores.ingreso_neto|floatformat:0|intcomma }}
+            </p>
+            <p class="text-xs text-gray-400 mt-1">Referencia: ideal &lt; 50%</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4">
+        <h2 class="font-semibold mb-4">Evolución Histórica</h2>
+        {% if historial %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-3 py-2 text-left">Período</th>
+                        <th class="px-3 py-2 text-right">Endeudamiento</th>
+                        <th class="px-3 py-2 text-right">Tasa Ahorro</th>
+                        <th class="px-3 py-2 text-right">Emergencia</th>
+                        <th class="px-3 py-2 text-right">Presión FF</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in historial %}
+                    <tr class="border-t hover:bg-gray-50">
+                        <td class="px-3 py-2 font-medium">{{ h.mes }}/{{ h.anio }}</td>
+                        <td class="px-3 py-2 text-right">
+                            <span class="inline-block w-2 h-2 rounded-full mr-1
+                                {% if h.semaforo_endeudamiento == 'verde' %}bg-green-500
+                                {% elif h.semaforo_endeudamiento == 'amarillo' %}bg-yellow-500
+                                {% else %}bg-red-500{% endif %}"></span>
+                            {{ h.ratio_endeudamiento|floatformat:1 }}%
+                        </td>
+                        <td class="px-3 py-2 text-right">
+                            <span class="inline-block w-2 h-2 rounded-full mr-1
+                                {% if h.semaforo_ahorro == 'verde' %}bg-green-500
+                                {% elif h.semaforo_ahorro == 'amarillo' %}bg-yellow-500
+                                {% else %}bg-red-500{% endif %}"></span>
+                            {{ h.tasa_ahorro|floatformat:1 }}%
+                        </td>
+                        <td class="px-3 py-2 text-right">
+                            <span class="inline-block w-2 h-2 rounded-full mr-1
+                                {% if h.semaforo_emergencia == 'verde' %}bg-green-500
+                                {% elif h.semaforo_emergencia == 'amarillo' %}bg-yellow-500
+                                {% else %}bg-red-500{% endif %}"></span>
+                            {{ h.cobertura_emergencia|floatformat:1 }}m
+                        </td>
+                        <td class="px-3 py-2 text-right">{{ h.presion_gastos_fijos|floatformat:1 }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-sm">Aún no hay historial. Visita el dashboard para generar el primer registro.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

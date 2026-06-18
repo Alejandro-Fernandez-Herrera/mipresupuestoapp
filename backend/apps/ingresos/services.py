@@ -1,5 +1,6 @@
 from decimal import Decimal, ROUND_HALF_UP
-from datetime import date
+from datetime import date, timedelta
+from dateutil.relativedelta import relativedelta
 
 Q = lambda x: x.quantize(Decimal("1"), rounding=ROUND_HALF_UP)
 
@@ -161,38 +162,118 @@ def calcular_vacaciones(salario_base, config):
     return Q(salario_base * config.factor_vacaciones_mensual)
 
 
-def calcular_prestaciones(salario_base, meses, config):
+def _calcular_fechas_prestaciones(anio):
+    """
+    Calcula las fechas de pago de prestaciones sociales para un año dado.
+
+    Args:
+        anio: año para el cual calcular las fechas
+
+    Returns:
+        dict con las fechas de pago de cada prestación
+    """
+    return {
+        'prima_junio': date(anio, 6, 30),
+        'prima_diciembre': date(anio, 12, 20),
+        'cesantias': date(anio + 1, 2, 14),
+        'intereses_cesantias': date(anio + 1, 1, 31),
+    }
+
+
+def calcular_prestaciones(salario_base, meses, config, anio=None):
     """
     Calcula todas las prestaciones sociales proyectadas para un período.
+
+    Las fechas de pago se calculan dinámicamente según el año actual,
+    evitando fechas hardcodeadas.
 
     Args:
         salario_base: salario base mensual (COP)
         meses: número de meses trabajados en el período
         config: ConfiguracionFiscal
+        anio: año base para el cálculo (default: año actual)
 
     Returns:
         dict con cada prestación y sus fechas de pago esperadas
     """
+    if anio is None:
+        anio = date.today().year
+
     prima = calcular_prima(salario_base, meses, config)
     cesantias = calcular_cesantias(salario_base, meses, config)
     intereses = calcular_intereses_cesantias(cesantias, meses, config)
     vacaciones = calcular_vacaciones(salario_base, config)
+    fechas = _calcular_fechas_prestaciones(anio)
 
     return {
         "prima_servicios": {
             "monto": prima,
-            "fecha_pago_1": date(2026, 6, 30),
-            "fecha_pago_2": date(2026, 12, 20),
+            "fecha_pago_1": fechas['prima_junio'],
+            "fecha_pago_2": fechas['prima_diciembre'],
         },
         "cesantias": {
             "monto": cesantias,
-            "fecha_pago": date(2027, 2, 14),
+            "fecha_pago": fechas['cesantias'],
         },
         "intereses_cesantias": {
             "monto": intereses,
-            "fecha_pago": date(2027, 1, 31),
+            "fecha_pago": fechas['intereses_cesantias'],
         },
         "vacaciones": {
             "monto_mensual": vacaciones,
         },
     }
+
+
+def calcular_alerta_prestacion(fecha_pago, dias_alerta=45):
+    """
+    Determina si una prestación está próxima a vencer y debe generar alerta.
+
+    Args:
+        fecha_pago:    fecha de pago esperada de la prestación
+        dias_alerta:   número de días antes para emitir alerta (default: 45)
+
+    Returns:
+        dict con:
+            - alerta: bool — True si debe mostrar alerta
+            - dias_restantes: int — días hasta la fecha de pago
+            - nivel: str — 'critico' (≤7 días), 'proximo' (≤45 días), 'normal'
+    """
+    hoy = date.today()
+    dias_restantes = (fecha_pago - hoy).days
+
+    if dias_restantes < 0:
+        return {'alerta': False, 'dias_restantes': dias_restantes, 'nivel': 'vencida'}
+
+    if dias_restantes <= 7:
+        return {'alerta': True, 'dias_restantes': dias_restantes, 'nivel': 'critico'}
+    elif dias_restantes <= dias_alerta:
+        return {'alerta': True, 'dias_restantes': dias_restantes, 'nivel': 'proximo'}
+
+    return {'alerta': False, 'dias_restantes': dias_restantes, 'nivel': 'normal'}
+
+
+def verificar_alertas_prestaciones(usuario):
+    """
+    Verifica todas las prestaciones pendientes de un usuario y
+    retorna las que están próximas a vencer.
+
+    Args:
+        usuario: UserProfile instance
+
+    Returns:
+        list de dicts con prestación + alerta para las que están próximas
+    """
+    from .models import PrestacionSocial
+    prestaciones = PrestacionSocial.objects.filter(
+        usuario=usuario, pagada=False
+    )
+    alertas = []
+    for p in prestaciones:
+        info_alerta = calcular_alerta_prestacion(p.fecha_pago_esperada)
+        if info_alerta['alerta']:
+            alertas.append({
+                'prestacion': p,
+                'alerta': info_alerta,
+            })
+    return alertas
