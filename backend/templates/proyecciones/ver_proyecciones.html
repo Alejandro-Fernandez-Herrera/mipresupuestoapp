@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Proyecciones — Finanzas Hogar{% endblock %}
+
+{% block content %}
+<div x-data="{
+    escenario: {{ escenario_id|default:'null' }},
+    horizonte: {{ horizonte }},
+    resultados: null,
+    loading: false,
+    cargarResultados() {
+        this.loading = true;
+        let url = '{% url "proyecciones:api" %}?horizonte=' + this.horizonte;
+        if (this.escenario) url += '&escenario=' + this.escenario;
+        fetch(url)
+            .then(r => r.json())
+            .then(data => { this.resultados = data; this.loading = false; });
+    }
+}" x-init="cargarResultados()" class="space-y-6">
+
+    <h1 class="text-2xl font-bold">Proyecciones y Escenarios</h1>
+
+    <div class="flex flex-wrap items-center gap-4 bg-white rounded-lg shadow p-4">
+        <div>
+            <label class="block text-sm text-gray-500">Escenario</label>
+            <select x-model="escenario" @change="cargarResultados()" class="border border-gray-300 rounded px-3 py-1 text-sm">
+                <option value="">Sin escenario</option>
+                {% for e in escenarios %}
+                <option value="{{ e.id }}">{{ e.get_nombre_display }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-500">Horizonte</label>
+            <select x-model="horizonte" @change="cargarResultados()" class="border border-gray-300 rounded px-3 py-1 text-sm">
+                {% for h in horizontes %}
+                <option value="{{ h }}">{{ h }} meses</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="ml-auto">
+            <a href="{% url 'proyecciones:configurar' %}" class="text-blue-600 text-sm hover:underline">Configurar escenarios →</a>
+        </div>
+    </div>
+
+    <div x-show="loading" class="text-center text-gray-500 py-8">Calculando...</div>
+
+    <template x-if="resultados && !loading">
+        <div class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <p class="text-gray-500 text-sm">Ahorro Mensual Promedio</p>
+                    <p class="text-2xl font-bold text-blue-600" x-text="'$' + Number(resultados.resultados.ahorro_mensual_promedio).toLocaleString('es-CO')"></p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <p class="text-gray-500 text-sm">Ahorro Acumulado</p>
+                    <p class="text-2xl font-bold text-green-600" x-text="'$' + Number(resultados.resultados.ahorro_acumulado).toLocaleString('es-CO')"></p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <p class="text-gray-500 text-sm">Ingresos Acumulados</p>
+                    <p class="text-2xl font-bold text-green-600" x-text="'$' + Number(resultados.resultados.total_ingresos_acumulado).toLocaleString('es-CO')"></p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <p class="text-gray-500 text-sm">Gastos Acumulados</p>
+                    <p class="text-2xl font-bold text-red-600" x-text="'$' + Number(resultados.resultados.total_gastos_acumulado).toLocaleString('es-CO')"></p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-4">
+                <h2 class="font-semibold mb-4">Detalle Mes a Mes</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left">Mes</th>
+                                <th class="px-4 py-2 text-right">Ingresos</th>
+                                <th class="px-4 py-2 text-right">Gastos</th>
+                                <th class="px-4 py-2 text-right">Ahorro</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="d in resultados.resultados.detalle_meses" :key="d.mes + '-' + d.anio">
+                                <tr class="border-t hover:bg-gray-50">
+                                    <td class="px-4 py-2" x-text="d.mes_nombre + ' ' + d.anio"></td>
+                                    <td class="px-4 py-2 text-right text-green-600" x-text="'$' + Number(d.ingresos).toLocaleString('es-CO')"></td>
+                                    <td class="px-4 py-2 text-right text-red-600" x-text="'$' + Number(d.gastos).toLocaleString('es-CO')"></td>
+                                    <td class="px-4 py-2 text-right font-medium" x-text="'$' + Number(d.ahorro).toLocaleString('es-CO')"
+                                        :class="Number(d.ahorro) >= 0 ? 'text-blue-600' : 'text-red-600'"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <h2 class="font-semibold mb-4">Fondo de Emergencia</h2>
+                    <div class="space-y-3">
+                        <template x-for="(info, nivel) in resultados.meta_emergencia" :key="nivel">
+                            <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                <span class="text-sm capitalize" x-text="nivel"></span>
+                                <span class="font-medium" x-show="info.alcanza" x-text="'Meta en ' + info.meses_necesarios + ' meses (' + meses_nombre[info.mes] + ' ' + info.anio + ')'"></span>
+                                <span class="font-medium text-red-600" x-show="!info.alcanza">No alcanza</span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-4">
+                    <h2 class="font-semibold mb-4">Cierre de Provisiones</h2>
+                    <div class="space-y-3">
+                        <template x-for="p in resultados.cierre_provisiones" :key="p.concepto">
+                            <div class="p-2 bg-gray-50 rounded">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm" x-text="p.concepto"></span>
+                                    <span class="text-xs" x-show="p.alcanza" x-text="'✅ Alcanza en ' + p.meses_restantes + ' meses'"></span>
+                                    <span class="text-xs text-red-600" x-show="!p.alcanza" x-text="'❌ Déficit: $' + Number(p.deficit).toLocaleString('es-CO')"></span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                    <div class="h-1.5 rounded-full" :class="p.progreso >= 80 ? 'bg-green-500' : (p.progreso >= 50 ? 'bg-yellow-500' : 'bg-red-500')" :style="'width: ' + p.progreso + '%'"></div>
+                                </div>
+                            </div>
+                        </template>
+                        <p class="text-sm text-gray-400" x-show="resultados.cierre_provisiones.length === 0">Sin provisiones activas</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const meses_nombre = {{ meses_nombre|safe }};
+</script>
+{% endblock %}
