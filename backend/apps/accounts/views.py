@@ -8,18 +8,17 @@ from datetime import date
 from .forms import RegistroForm, PerfilForm, ConfiguracionFiscalForm
 from .models import UserProfile, ConfiguracionFiscal
 from apps.ingresos.models import RegistroNomina, OtroIngreso
+from apps.ingresos.services import verificar_alertas_prestaciones
 from apps.gastos.models import Gasto, Categoria
 from apps.provisiones.models import FondoEmergencia
-from apps.provisiones.services import (
-    calcular_ingresos_totales,
-    calcular_gastos_totales,
-    calcular_ahorro_neto,
-    calcular_tasa_ahorro,
-    calcular_gasto_esencial_mensual,
-    calcular_cobertura_meses,
-    calcular_presion_gastos_fijos,
+from apps.indicadores.services import (
+    calcular_indicadores_mes,
     generar_diagnostico,
-    calcular_gastos_fijos,
+    guardar_historial,
+    calcular_tendencia,
+    obtener_tendencia_ingresos_gastos,
+    obtener_resumen_deudas,
+    obtener_provisiones_activas,
 )
 
 
@@ -57,14 +56,29 @@ def dashboard(request):
     mes = int(request.GET.get('mes', hoy.month))
     anio = int(request.GET.get('anio', hoy.year))
 
-    total_ingresos = calcular_ingresos_totales(request.user, mes, anio)
-    total_gastos = calcular_gastos_totales(request.user, mes, anio)
-    ahorro_neto = calcular_ahorro_neto(request.user, mes, anio)
-    tasa_ahorro = calcular_tasa_ahorro(request.user, mes, anio)
-    meta_tasa = request.user.meta_tasa_ahorro
+    # Calcular todos los indicadores usando el módulo especializado
+    indicadores = calcular_indicadores_mes(request.user, mes, anio)
+    guardar_historial(request.user, mes, anio, indicadores)
 
-    gastos_fijos = calcular_gastos_fijos(request.user, mes, anio)
-    presion_gastos_fijos = calcular_presion_gastos_fijos(request.user, mes, anio)
+    total_ingresos = indicadores['ingreso_neto']
+    total_gastos = indicadores['gastos_totales']
+    ahorro_neto = indicadores['ahorro_neto']
+    tasa_ahorro = indicadores['tasa_ahorro']
+    meta_tasa = request.user.meta_tasa_ahorro
+    gastos_fijos = indicadores['gastos_fijos']
+    presion_gastos_fijos = indicadores['presion_gastos_fijos']
+    gasto_esencial = indicadores['gasto_esencial']
+    cobertura_emergencia = indicadores['cobertura_emergencia']
+    saldo_fondo = indicadores['saldo_fondo']
+    ratio_endeudamiento = indicadores['ratio_endeudamiento']
+    semaforo_endeudamiento = indicadores['semaforo_endeudamiento']
+    semaforo_ahorro = indicadores['semaforo_ahorro']
+    semaforo_emergencia = indicadores['semaforo_emergencia']
+
+    # Tendencias respecto al mes anterior
+    tendencias = {}
+    for campo in ['tasa_ahorro', 'ratio_endeudamiento', 'cobertura_emergencia', 'presion_gastos_fijos']:
+        tendencias[campo] = calcular_tendencia(request.user, campo, mes, anio)
 
     gastos_por_categoria = (
         Gasto.objects.filter(usuario=request.user, mes=mes, anio=anio)
@@ -77,22 +91,20 @@ def dashboard(request):
         usuario=request.user
     ).select_related('categoria', 'rubro').order_by('-fecha', '-creado_en')[:10]
 
-    gasto_esencial = calcular_gasto_esencial_mensual(request.user, mes, anio)
-
-    try:
-        fondo = FondoEmergencia.objects.get(usuario=request.user)
-        cobertura_emergencia = calcular_cobertura_meses(fondo.saldo_actual, gasto_esencial)
-        saldo_fondo = fondo.saldo_actual
-    except FondoEmergencia.DoesNotExist:
-        cobertura_emergencia = Decimal('0')
-        saldo_fondo = Decimal('0')
-
-    indicadores = {
-        'tasa_ahorro': tasa_ahorro,
-        'presion_gastos_fijos': presion_gastos_fijos,
-        'cobertura_emergencia': cobertura_emergencia,
-    }
+    # Diagnóstico automático
     diagnostico = generar_diagnostico(indicadores)
+
+    # Datos para gráfico de línea (RF-112)
+    tendencia_ig = obtener_tendencia_ingresos_gastos(request.user)
+
+    # Resumen de deudas (RF-115)
+    resumen_deudas = obtener_resumen_deudas(request.user)
+
+    # Provisiones activas (RF-116)
+    provisiones_activas = obtener_provisiones_activas(request.user)
+
+    # Alertas de prestaciones próximas
+    alertas_prestaciones = verificar_alertas_prestaciones(request.user)
 
     return render(request, 'dashboard.html', {
         'mes': mes,
@@ -111,7 +123,18 @@ def dashboard(request):
         'gasto_esencial': gasto_esencial,
         'cobertura_emergencia': cobertura_emergencia,
         'saldo_fondo': saldo_fondo,
+        'ratio_endeudamiento': ratio_endeudamiento,
+        'semaforo_endeudamiento': semaforo_endeudamiento,
+        'semaforo_ahorro': semaforo_ahorro,
+        'semaforo_emergencia': semaforo_emergencia,
         'diagnostico': diagnostico,
+        'tendencias': tendencias,
+        'alertas_prestaciones': alertas_prestaciones,
+        'indicadores': indicadores,
+        'tendencia_ingresos_gastos': tendencia_ig,
+        'tendencia_ig_json': tendencia_ig,
+        'resumen_deudas': resumen_deudas,
+        'provisiones_activas': provisiones_activas,
     })
 
 

@@ -51,24 +51,56 @@
             {% endif %}
         </div>
         <div class="bg-white rounded-lg shadow p-4">
+            <h2 class="font-semibold mb-4">Tendencia Ingresos vs Gastos <span class="text-xs text-gray-400 font-normal">(últimos 6 meses)</span></h2>
+            <canvas id="grafico-tendencia" height="200"></canvas>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow p-4">
             <h2 class="font-semibold mb-4">Indicadores de Salud Financiera</h2>
             <div class="space-y-3">
                 <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
                     <span class="text-sm">Tasa Ahorro</span>
-                    <span class="font-medium {% if tasa_ahorro >= meta_tasa %}text-green-600{% elif tasa_ahorro >= 10 %}text-yellow-600{% else %}text-red-600{% endif %}">
-                        {{ tasa_ahorro|floatformat:1 }}% {% if tasa_ahorro >= meta_tasa %}✓{% endif %}
+                    <span class="font-medium">
+                        <span class="inline-block w-2 h-2 rounded-full mr-1
+                            {% if semaforo_ahorro == 'verde' %}bg-green-500
+                            {% elif semaforo_ahorro == 'amarillo' %}bg-yellow-500
+                            {% else %}bg-red-500{% endif %}"></span>
+                        {{ tasa_ahorro|floatformat:1 }}%
+                        <span class="text-xs ml-1">{{ tendencias.tasa_ahorro }}</span>
+                    </span>
+                </div>
+                <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span class="text-sm">Ratio Endeudamiento</span>
+                    <span class="font-medium">
+                        <span class="inline-block w-2 h-2 rounded-full mr-1
+                            {% if semaforo_endeudamiento == 'verde' %}bg-green-500
+                            {% elif semaforo_endeudamiento == 'amarillo' %}bg-yellow-500
+                            {% else %}bg-red-500{% endif %}"></span>
+                        {{ ratio_endeudamiento|floatformat:1 }}%
+                        <span class="text-xs ml-1">{{ tendencias.ratio_endeudamiento }}</span>
                     </span>
                 </div>
                 <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
                     <span class="text-sm">Presión Gastos Fijos</span>
-                    <span class="font-medium {% if presion_gastos_fijos < 50 %}text-green-600{% elif presion_gastos_fijos < 70 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                    <span class="font-medium
+                        {% if presion_gastos_fijos < 50 %}text-green-600
+                        {% elif presion_gastos_fijos < 70 %}text-yellow-600
+                        {% else %}text-red-600{% endif %}">
                         {{ presion_gastos_fijos|floatformat:1 }}%
+                        <span class="text-xs ml-1">{{ tendencias.presion_gastos_fijos }}</span>
                     </span>
                 </div>
                 <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
                     <span class="text-sm">Cobertura Emergencia</span>
-                    <span class="font-medium {% if cobertura_emergencia >= 3 %}text-green-600{% elif cobertura_emergencia >= 1 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                    <span class="font-medium">
+                        <span class="inline-block w-2 h-2 rounded-full mr-1
+                            {% if semaforo_emergencia == 'verde' %}bg-green-500
+                            {% elif semaforo_emergencia == 'amarillo' %}bg-yellow-500
+                            {% else %}bg-red-500{% endif %}"></span>
                         {{ cobertura_emergencia|floatformat:1 }} meses
+                        <span class="text-xs ml-1">{{ tendencias.cobertura_emergencia }}</span>
                     </span>
                 </div>
                 <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
@@ -81,8 +113,107 @@
                 {{ diagnostico }}
             </div>
             {% endif %}
+            <div class="mt-2 text-right">
+                <a href="{% url 'indicadores:historial' %}?mes={{ mes }}&anio={{ anio }}" class="text-blue-600 text-xs hover:underline">Ver historial completo →</a>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <h2 class="font-semibold mb-4">Resumen de Deudas</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span class="text-sm">Créditos activos</span>
+                    <span class="font-medium">{{ resumen_deudas.creditos_activos }}</span>
+                </div>
+                <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span class="text-sm">Tarjetas activas</span>
+                    <span class="font-medium">{{ resumen_deudas.tarjetas_activas }}</span>
+                </div>
+                <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span class="text-sm">Total cuotas/mes</span>
+                    <span class="font-medium text-red-600">${{ resumen_deudas.total_cuotas_mes|floatformat:0|intcomma }}</span>
+                </div>
+                <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span class="text-sm">Deuda total</span>
+                    <span class="font-medium text-red-600">${{ resumen_deudas.total_deuda_total|floatformat:0|intcomma }}</span>
+                </div>
+                {% if resumen_deudas.tarjetas_info %}
+                <div class="border-t pt-2 mt-2">
+                    <p class="text-xs text-gray-500 mb-2 uppercase tracking-wide">Tarjetas</p>
+                    {% for t in resumen_deudas.tarjetas_info %}
+                    <div class="flex justify-between items-center text-sm py-1">
+                        <span class="flex items-center">
+                            <span class="inline-block w-2 h-2 rounded-full mr-1
+                                {% if t.semaforo == 'verde' %}bg-green-500
+                                {% elif t.semaforo == 'amarillo' %}bg-yellow-500
+                                {% else %}bg-red-500{% endif %}"></span>
+                            {{ t.nombre }}
+                        </span>
+                        <span class="text-xs">${{ t.saldo_actual|floatformat:0|intcomma }} / ${{ t.limite|floatformat:0|intcomma }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="mt-2 text-right">
+                <a href="{% url 'deudas:lista' %}" class="text-blue-600 text-xs hover:underline">Ver créditos →</a>
+                <span class="mx-1">·</span>
+                <a href="{% url 'deudas:lista_tarjetas' %}" class="text-blue-600 text-xs hover:underline">Ver tarjetas →</a>
+            </div>
         </div>
     </div>
+
+    {% if alertas_prestaciones %}
+    <div class="bg-white rounded-lg shadow p-4">
+        <h2 class="font-semibold mb-4">🔔 Prestaciones Proyectadas — Próximas</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {% for a in alertas_prestaciones %}
+            <div class="border rounded-lg p-3 {% if a.alerta.nivel == 'critico' %}bg-red-50 border-red-200{% else %}bg-yellow-50 border-yellow-200{% endif %}">
+                <p class="text-xs text-gray-500 uppercase">{{ a.prestacion.get_tipo_display }}</p>
+                <p class="text-lg font-bold text-green-600">${{ a.prestacion.monto_proyectado|floatformat:0|intcomma }}</p>
+                <p class="text-xs text-gray-500">
+                    Vence {{ a.prestacion.fecha_pago_esperada|date:"d M Y" }}
+                    ({{ a.alerta.dias_restantes }} días)
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="mt-2 text-right">
+            <a href="{% url 'ingresos:prestaciones' %}?anio={{ anio }}" class="text-blue-600 text-xs hover:underline">Ver todas las prestaciones →</a>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if provisiones_activas %}
+    <div class="bg-white rounded-lg shadow p-4">
+        <h2 class="font-semibold mb-4">Provisiones Activas</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for p in provisiones_activas %}
+            <div class="border rounded-lg p-3 {% if p.alerta %}bg-orange-50 border-orange-200{% endif %}">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-sm font-medium">{{ p.concepto }}</p>
+                    <span class="text-xs {% if p.alerta %}text-orange-600 font-semibold{% else %}text-gray-400{% endif %}">
+                        {% if p.alerta %}⚠{% else %}{{ p.meses_restantes }} meses{% endif %}
+                    </span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                    <div class="h-2 rounded-full {% if p.progreso >= 80 %}bg-green-500{% elif p.progreso >= 50 %}bg-yellow-500{% else %}bg-red-500{% endif %}" style="width: {{ p.progreso }}%"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-500">
+                    <span>${{ p.ahorro_acumulado|floatformat:0|intcomma }} / ${{ p.monto_total|floatformat:0|intcomma }}</span>
+                    <span>{{ p.progreso }}%</span>
+                </div>
+                {% if p.alerta %}
+                <p class="text-xs text-orange-600 mt-1">⚠ Vence {{ p.fecha_pago|date:"d M Y" }} — Faltan ${{ p.faltante|floatformat:0|intcomma }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="mt-2 text-right">
+            <a href="{% url 'provisiones:lista' %}" class="text-blue-600 text-xs hover:underline">Ver todas las provisiones →</a>
+        </div>
+    </div>
+    {% endif %}
 
     <div class="bg-white rounded-lg shadow p-4">
         <h2 class="font-semibold mb-4">Últimos Gastos</h2>
@@ -146,4 +277,44 @@
     }
 </script>
 {% endif %}
+<script>
+    const ctx2 = document.getElementById('grafico-tendencia');
+    if (ctx2) {
+        const data = {{ tendencia_ig_json|safe }};
+        new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Ingresos',
+                    data: data.ingresos,
+                    borderColor: '#16a34a',
+                    backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                    tension: 0.3,
+                    fill: true,
+                }, {
+                    label: 'Gastos',
+                    data: data.gastos,
+                    borderColor: '#dc2626',
+                    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                    tension: 0.3,
+                    fill: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } }
+                },
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: function(value) { return '$' + value.toLocaleString('es-CO'); }
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
 {% endblock %}

@@ -86,7 +86,7 @@ def registrar_credito(request):
             CuotaCredito.objects.bulk_create(cuotas)
 
             messages.success(request, 'Crédito registrado correctamente.')
-            return redirect('deudas:lista')
+            return redirect('dashboard')
     else:
         form = CreditoForm()
 
@@ -249,7 +249,7 @@ def registrar_tarjeta(request):
             tarjeta.usuario = request.user
             tarjeta.save()
             messages.success(request, 'Tarjeta registrada correctamente.')
-            return redirect('deudas:lista_tarjetas')
+            return redirect('dashboard')
     else:
         form = TarjetaCreditoForm()
 
@@ -343,7 +343,7 @@ def registrar_compra_tc(request, tarjeta_id):
             tarjeta.save()
             compra.save()
             messages.success(request, f'Compra registrada: {compra.descripcion}')
-            return redirect('deudas:detalle_tarjeta', tarjeta_id=tarjeta.id)
+            return redirect('dashboard')
     else:
         form = CompraTCForm(initial={'fecha': date.today()})
 
@@ -374,7 +374,7 @@ def registrar_pago_tc(request, tarjeta_id):
                 request,
                 f'Pago de ${monto_pago:,.0f} registrado en {tarjeta.nombre}.'
             )
-            return redirect('deudas:detalle_tarjeta', tarjeta_id=tarjeta.id)
+            return redirect('dashboard')
     else:
         form = PagoTCForm()
 

@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 from decimal import Decimal
 from .models import Categoria, Rubro, Gasto
 
@@ -130,6 +131,6 @@ class GastoForm(forms.ModelForm):
             self.fields['categoria'].queryset = Categoria.objects.filter(
                 visible=True
             ).filter(
-                models.Q(usuario=usuario) | models.Q(usuario__isnull=True)
+                Q(usuario=usuario) | Q(usuario__isnull=True)
             )
             self.fields['rubro'].queryset = Rubro.objects.filter(visible=True)

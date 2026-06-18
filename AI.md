@@ -461,47 +461,82 @@ Se conservan los últimos 30 días automáticamente.
 ## 10. ESTADO ACTUAL DEL PROYECTO
 
 ```
-Sprint actual: S7 — Tarjetas de crédito (HU-011)
+Sprint actual: S10 — Dashboard integrado con todos los módulos (HU-014)
 Última actualización: 2026-06-17
 
 COMPLETADO:
   ✅ Especificaciones v2.1
   ✅ Test harness (tests/conftest.py)
-  ✅ AI harness (CLAUDE.md)
+  ✅ AI harness (AI.md)
   ✅ README.md
 
 COMPLETADO:
   ✅ S1: Docker Compose + estructura Django + PostgreSQL
   ✅ S2: Auth, sesiones, perfil con config SMLV/UVT
-    - RF-001: Registro con email único, nombre, contraseña ≥ 8 chars
-    - RF-002: Login por username o email (EmailOrUsernameBackend)
-    - RF-003: Sesiones expiran a 30 min de inactividad
-    - RF-004: Recuperación de contraseña (console email backend)
-    - RF-005: Perfil con nombre, email, ciudad, SMLV/UVT editables
-
-COMPLETADO:
   ✅ S3: Módulo ingresos + nómina colombiana
-    - RF-010: Ingresar salario base mensual devengado
-    - RF-010a: Cálculo automático de deducciones: Salud 4%, Pensión 4%, Solidaridad (escala progresiva)
-    - RF-010b: Retención en la fuente según umbral DIAN (0% si ≤ 95 UVT/mes)
-    - RF-010c: Desglose neto: Bruto − Salud − Pensión − Solidaridad − Retención = Neto
-    - RF-010d: SMLV y UVT editables desde configuración fiscal
-    - RF-010e: Auxilio transporte automático si salario ≤ 2 SMLV
-    - RF-011a: Prima servicios (8.33% mensual, pagos jun/dic)
-    - RF-011b: Cesantías (8.33% mensual, consignación feb)
-    - RF-011c: Intereses cesantías (12% anual)
-    - RF-011d: Vacaciones (4.17% mensual)
-    - RF-011e: Widget prestaciones proyectadas
-    - RF-012: Registro de otros ingresos por tipo
-    - RF-014: Total ingresos netos del mes calculado
-    - RF-015: Historial mes a mes de ingresos
-
-COMPLETADO:
   ✅ S4: Categorías, rubros, gastos
   ✅ S5: Ahorro + fondo emergencia + dashboard básico
   ✅ S6: Créditos de consumo (French amortization)
-  🔄 S7: Tarjetas de crédito (HU-011, RF-060 a RF-067)
-  ⬜ S8-S12: ver specs v2.1
+  ✅ S7: Tarjetas de crédito (HU-011, RF-060 a RF-067)
+  ✅ S8: Provisiones + catálogo Colombia (HU-012)
+  ✅ S9: Indicadores salud financiera + Prestaciones (HU-018, HU-019)
+  ✅ S10: Dashboard integrado con todos los módulos (HU-014)
+
+### S9: Indicadores Salud Financiera + Prestaciones (HU-018, HU-019)
+
+**HU-018 — Indicadores de Salud Financiera (RF-091 a RF-096)**
+- RF-091: Ratio de Endeudamiento con semáforo verde/amarillo/rojo
+- RF-092: Tasa de Ahorro con semáforo vs meta configurable
+- RF-093: Cobertura Fondo Emergencia con semáforo (>3m, 1-3m, <1m)
+- RF-094: Presión de Gastos Fijos con referencia < 50%
+- RF-095: Dashboard con 4 indicadores, semáforos y tendencia (↑ ↓ →)
+- RF-096: Diagnóstico automático mensual (máximo 3 líneas)
+
+**Componentes creados:**
+- `apps/indicadores/` — app completa con modelos, servicios, vistas, templates y tests
+- `HistorialIndicador` — modelo para snapshot mensual de indicadores
+- `services.py` — funciones puras de cálculo + orquestación con BD
+- Vista `historial_indicadores` — tabla de evolución últimos 12 meses
+- Template `indicadores/historial.html` — 4 tarjetas con semáforo + historial
+- Tests: 20 tests unitarios parametrizados (todos pasan)
+
+**HU-019 — Prestaciones Sociales Proyectadas**
+- Fechas de pago dinámicas (no hardcodeadas 2026/2027)
+- `calcular_alerta_prestacion()` — alerta 45 días antes del vencimiento
+- `verificar_alertas_prestaciones()` — lista de prestaciones próximas
+- Vista `marcar_prestacion_pagada()` — confirmar pago vs. proyectado
+- Dashboard widget "Prestaciones Proyectadas — Próximas"
+- Alertas visuales en tarjetas (critico/proximo/urgente)
+
+**Dashboard integrado:**
+- Dashboard migrado a usar `indicadores.services` (consolidación)
+- 4to indicador añadido: Ratio de Endeudamiento
+- Flechas de tendencia (↑ ↓ →) para cada indicador
+- Link a página de historial completo
+- Widget de prestaciones próximas con alertas
+```
+
+### S10: Dashboard Integrado con todos los módulos (HU-014)
+
+**RF-112 — Gráfico de línea: tendencia ingresos vs. gastos últimos 6 meses**
+- Nueva función `obtener_tendencia_ingresos_gastos()` en `indicadores/services.py`
+- Chart.js line chart con 2 datasets: Ingresos (verde) y Gastos (rojo)
+- Tooltip con formato COP en eje Y
+
+**RF-115 — Resumen de deudas: total cuotas mensuales + total saldos (créditos + tarjetas)**
+- Nueva función `obtener_resumen_deudas()` en `indicadores/services.py`
+- Widget en dashboard: créditos activos, tarjetas activas, total cuotas/mes, deuda total
+- Lista compacta de tarjetas con semáforo de uso (● verde/amarillo/rojo) y disponibilidad
+
+**RF-116 — Lista de provisiones activas con barra de progreso y próximas en vencer**
+- Nueva función `obtener_provisiones_activas()` en `indicadores/services.py`
+- Widget en dashboard: top 5 provisiones con barra de progreso coloreada, alerta visual si próxima a vencer con < 80%
+
+**RF-118 — Dashboard actualizado al registrar transacciones**
+- Redirects post-guardado en gastos, ingresos, deudas y provisiones apuntan al dashboard
+
+**Tests creados:**
+- `tests/apps/test_dashboard.py` — 14 tests: vista dashboard, widgets, servicios y redirects
 ```
 
 ### Decisiones tomadas (no reabrir)
